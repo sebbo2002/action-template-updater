@@ -1,13 +1,15 @@
 {
   "author": "Sebastian Pekarek <mail@sebbo.net>",
   "bugs": {
-    "url": "https://github.com/sebbo2002/js-template/issues"
+    "url": "https://github.com/sebbo2002/action-template-updater/issues"
   },
   "dependencies": {
     "@actions/core": "^1.8.0",
-    "@actions/github": "^5.0.1"
+    "@actions/github": "^5.0.2",
+    "@octokit/rest": "^18.12.0",
+    "simple-git": "^3.7.1"
   },
-  "description": "A template that I use to start new projects and services.",
+  "description": "Updates a fork of a template repository by creating pull requests for changes",
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.1",
     "@semantic-release/exec": "^6.0.2",
@@ -25,7 +27,8 @@
     "nyc": "^15.1.0",
     "semantic-release-license": "^1.0.3",
     "source-map-support": "^0.5.21",
-    "ts-node": "^10.4.0"
+    "ts-node": "^10.4.0",
+    "typescript": "^4.6.4"
   },
   "engines": {
     "node": ">=14.0.0"
@@ -33,13 +36,13 @@
   "files": [
     "/dist"
   ],
-  "homepage": "https://github.com/sebbo2002/js-template#readme",
+  "homepage": "https://github.com/sebbo2002/action-template-updater#readme",
   "license": "MIT",
   "main": "dist/index.js",
-  "name": "@sebbo2002/js-template-test",
+  "name": "@sebbo2002/action-template-updater",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sebbo2002/js-template.git"
+    "url": "git+https://github.com/sebbo2002/action-template-updater.git"
   },
   "scripts": {
     "build": "ncc build ./src/index.ts --license licenses.txt",

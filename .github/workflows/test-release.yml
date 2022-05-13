@@ -13,7 +13,7 @@ jobs:
     if: contains(toJson(github.event.commits.*.message), '[skip ci]') == false || github.ref == 'refs/heads/main'
     strategy:
       matrix:
-        node: [12.x, 14.x, 16.x]
+        node: [14.x, 16.x]
     steps:
       - name: ☁️ Checkout Project
         uses: actions/checkout@v3
@@ -26,6 +26,8 @@ jobs:
         run: npm ci
       - name: ⏳ Run tests
         run: npm run test
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   coverage:
     name: Code Coverage / Lint
@@ -44,6 +46,8 @@ jobs:
         run: npm run lint
       - name: ⚙️ Build project
         run: npm run build-all
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   license-checker:
     name: License Checker
@@ -69,7 +73,6 @@ jobs:
       - coverage
       - tests
       - license-checker
-      - docker-image
     if: ${{ github.repository != 'sebbo2002/js-template' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
     steps:
       - name: ☁️ Checkout Project
