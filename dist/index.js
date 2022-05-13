@@ -15510,6 +15510,10 @@ class Action {
             const tokenUserName = yield this.getTokenUser();
             const repository = yield this.getRepository();
             const template = yield this.getTemplate();
+            if (this.context.owner == template.owner && this.context.repo === template.name) {
+                this.core.notice('Repository and template are the same, stop here…');
+                return;
+            }
             let pr = yield this.findPullRequest(repository.defaultBranch, tokenUserName);
             const templateBranch = yield this.getTemplateBranch(template);
             if (yield this.repoIncludesCommit(templateBranch.sha)) {

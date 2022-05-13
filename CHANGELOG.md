@@ -1,3 +1,10 @@
+# [1.0.0-develop.2](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.1...v1.0.0-develop.2) (2022-05-13)
+
+
+### Features
+
+* Stop if repo and template are the same ([5796ce8](https://github.com/sebbo2002/action-template-updater/commit/5796ce800ce9b8efe3169f8b2b56a12eb0598e88))
+
 # 1.0.0-develop.1 (2022-05-13)
 
 
