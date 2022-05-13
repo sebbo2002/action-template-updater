@@ -1,3 +1,10 @@
+# [1.0.0-develop.3](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.2...v1.0.0-develop.3) (2022-05-13)
+
+
+### Bug Fixes
+
+* Configure assignees with comma separated string ([6bd9733](https://github.com/sebbo2002/action-template-updater/commit/6bd97334a6e5f3bb211bce5516557cc8993ac3cb))
+
 # [1.0.0-develop.2](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.1...v1.0.0-develop.2) (2022-05-13)
 
 

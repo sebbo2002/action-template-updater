@@ -15441,12 +15441,14 @@ const github_1 = __nccwpck_require__(5438);
 const lib_1 = __importDefault(__nccwpck_require__(6791));
 try {
     const token = core.getInput('token');
-    const rawAssignees = core.getInput('assignees');
     const myContext = {
         owner: github_1.context.repo.owner,
         repo: github_1.context.repo.repo,
         template: core.getInput('template'),
-        assignees: Array.isArray(rawAssignees) ? rawAssignees : [rawAssignees]
+        assignees: core.getInput('assignees')
+            .split(',')
+            .map(u => u.trim())
+            .filter(Boolean)
     };
     const action = new lib_1.default(token, myContext, core);
     action.run().catch(error => core.setFailed(error.message));
