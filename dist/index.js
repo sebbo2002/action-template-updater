@@ -15539,7 +15539,7 @@ class Action {
                 tokenUserName = user.data.login;
             }
             catch (error) {
-                this.core.warning(`Unable to detect user, using default value ${tokenUserName}`);
+                this.core.info(`Unable to detect user, using default value ${tokenUserName}`);
                 this.core.info(String(error));
             }
             finally {
@@ -15733,12 +15733,12 @@ class Action {
             this.core.startGroup('Create update branch for pull request');
             const tmp = yield (0, promises_1.mkdtemp)((0, path_1.join)((0, os_1.tmpdir)(), 'action-template-updater'));
             try {
-                this.core.info('Set git user name and email');
-                yield this.git.addConfig('user.email', 'uyiebuogiacahdohhohd@e.sebbo.net');
-                yield this.git.addConfig('user.name', username);
                 this.core.info(`Clone ${repository.cloneUrl}`);
                 yield this.git.clone(this.addTokenToRepositoryUrl(repository.cloneUrl), tmp);
                 this.git.cwd(tmp);
+                this.core.info('Set git user name and email');
+                yield this.git.addConfig('user.email', 'uyiebuogiacahdohhohd@e.sebbo.net');
+                yield this.git.addConfig('user.name', username);
                 this.core.info(`Add template remote (${template.cloneUrl})`);
                 yield this.git.addRemote('template', template.cloneUrl);
                 this.core.info('Fetch template');

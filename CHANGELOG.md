@@ -1,3 +1,15 @@
+# [1.0.0-develop.4](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.3...v1.0.0-develop.4) (2022-05-13)
+
+
+### Bug Fixes
+
+* Set git username after clone to allow local config ([522d403](https://github.com/sebbo2002/action-template-updater/commit/522d40328907cdb4c39835ae3121aaa8c5ba6e0a))
+
+
+### Features
+
+* Don't handle job tokens as warning ([a01b54a](https://github.com/sebbo2002/action-template-updater/commit/a01b54ad4f4086009beb8fb4b6963c7c9b7ae648))
+
 # [1.0.0-develop.3](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.2...v1.0.0-develop.3) (2022-05-13)
 
 
