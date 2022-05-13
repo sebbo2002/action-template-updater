@@ -321,13 +321,13 @@ export default class Action {
         const tmp = await mkdtemp(join(tmpdir(), 'action-template-updater'));
 
         try {
-            this.core.info('Set git user name and email');
-            await this.git.addConfig('user.email', 'uyiebuogiacahdohhohd@e.sebbo.net');
-            await this.git.addConfig('user.name', username);
-
             this.core.info(`Clone ${repository.cloneUrl}`);
             await this.git.clone(this.addTokenToRepositoryUrl(repository.cloneUrl), tmp);
             this.git.cwd(tmp);
+
+            this.core.info('Set git user name and email');
+            await this.git.addConfig('user.email', 'uyiebuogiacahdohhohd@e.sebbo.net');
+            await this.git.addConfig('user.name', username);
 
             this.core.info(`Add template remote (${template.cloneUrl})`);
             await this.git.addRemote('template', template.cloneUrl);
