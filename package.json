@@ -42,7 +42,7 @@
     "url": "git+https://github.com/sebbo2002/js-template.git"
   },
   "scripts": {
-    "build": "ncc build ./src/index.ts -m --license licenses.txt",
+    "build": "ncc build ./src/index.ts --license licenses.txt",
     "build-all": "./.github/workflows/build.sh",
     "coverage": "nyc mocha",
     "license-check": "license-checker --production --summary",
