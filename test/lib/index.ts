@@ -123,7 +123,6 @@ describe('Action', function () {
             });
 
             assert.strictEqual(branch.name, 'typescript');
-            assert.deepStrictEqual(branch.parents, []);
         });
         it('should work for javascript repos', async function () {
             const context: Context = {
