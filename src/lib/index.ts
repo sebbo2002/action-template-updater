@@ -72,6 +72,10 @@ export default class Action {
         const tokenUserName = await this.getTokenUser();
         const repository = await this.getRepository();
         const template = await this.getTemplate();
+        if(this.context.owner == template.owner && this.context.repo === template.name) {
+            this.core.notice('Repository and template are the same, stop here…');
+            return;
+        }
 
         let pr = await this.findPullRequest(repository.defaultBranch, tokenUserName);
         const templateBranch = await this.getTemplateBranch(template);
