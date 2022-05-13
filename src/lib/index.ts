@@ -100,7 +100,7 @@ export default class Action {
             this.core.info(`Hello ${user.data.login}, nice to meet you 👋🏼`);
             tokenUserName = user.data.login;
         } catch (error) {
-            this.core.warning(`Unable to detect user, using default value ${tokenUserName}`);
+            this.core.info(`Unable to detect user, using default value ${tokenUserName}`);
             this.core.info(String(error));
         } finally {
             this.core.endGroup();
