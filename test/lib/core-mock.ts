@@ -12,6 +12,7 @@ describe('CoreMock', function () {
         core.error(error);
         core.startGroup('Start group');
         core.warning('Warning');
+        core.setOutput('key', 'value');
         core.endGroup();
         core.notice('Notice');
 
@@ -21,6 +22,7 @@ describe('CoreMock', function () {
             ['group', 'Start group', [
                 ['warning', 'Warning']
             ]],
+            ['output', 'key', 'value'],
             ['notice', 'Notice']
         ]);
     });

@@ -72,6 +72,10 @@ export default class Action {
         const tokenUserName = await this.getTokenUser();
         const repository = await this.getRepository();
         const template = await this.getTemplate();
+        if(this.context.owner == template.owner && this.context.repo === template.name) {
+            this.core.notice('Repository and template are the same, stop here…');
+            return;
+        }
 
         let pr = await this.findPullRequest(repository.defaultBranch, tokenUserName);
         const templateBranch = await this.getTemplateBranch(template);
@@ -96,7 +100,7 @@ export default class Action {
             this.core.info(`Hello ${user.data.login}, nice to meet you 👋🏼`);
             tokenUserName = user.data.login;
         } catch (error) {
-            this.core.warning(`Unable to detect user, using default value ${tokenUserName}`);
+            this.core.info(`Unable to detect user, using default value ${tokenUserName}`);
             this.core.info(String(error));
         } finally {
             this.core.endGroup();
@@ -317,13 +321,13 @@ export default class Action {
         const tmp = await mkdtemp(join(tmpdir(), 'action-template-updater'));
 
         try {
-            this.core.info('Set git user name and email');
-            await this.git.addConfig('user.email', 'uyiebuogiacahdohhohd@e.sebbo.net');
-            await this.git.addConfig('user.name', username);
-
             this.core.info(`Clone ${repository.cloneUrl}`);
             await this.git.clone(this.addTokenToRepositoryUrl(repository.cloneUrl), tmp);
             this.git.cwd(tmp);
+
+            this.core.info('Set git user name and email');
+            await this.git.addConfig('user.email', 'uyiebuogiacahdohhohd@e.sebbo.net');
+            await this.git.addConfig('user.name', username);
 
             this.core.info(`Add template remote (${template.cloneUrl})`);
             await this.git.addRemote('template', template.cloneUrl);

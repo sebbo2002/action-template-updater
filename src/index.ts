@@ -5,13 +5,14 @@ import Action from './lib';
 
 try {
     const token = core.getInput('token');
-    const rawAssignees = core.getInput('assignees');
-
     const myContext = {
         owner: context.repo.owner,
         repo: context.repo.repo,
         template: core.getInput('template'),
-        assignees: Array.isArray(rawAssignees) ? rawAssignees : [rawAssignees]
+        assignees: core.getInput('assignees')
+            .split(',')
+            .map(u => u.trim())
+            .filter(Boolean)
     };
 
     const action = new Action(token, myContext, core);
