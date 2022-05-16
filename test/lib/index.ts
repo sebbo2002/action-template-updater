@@ -139,7 +139,7 @@ describe('Action', function () {
                 cloneUrl: ''
             });
 
-            assert.strictEqual(branch.name, 'javascript');
+            assert.strictEqual(branch.name, 'javascript-docker');
         });
         it('should work for github-action repos', async function () {
             const context: Context = {
