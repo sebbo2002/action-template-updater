@@ -15725,7 +15725,13 @@ class Action {
     }
     addTokenToRepositoryUrl(url) {
         const urlObj = new url_1.URL(url);
-        urlObj.username = this.token;
+        if (process.env.GITHUB_ACTOR) {
+            urlObj.username = process.env.GITHUB_ACTOR;
+            urlObj.password = this.token;
+        }
+        else {
+            urlObj.username = this.token;
+        }
         return urlObj.toString();
     }
     createUpdateBranch(repository, template, branch, username, push = true) {

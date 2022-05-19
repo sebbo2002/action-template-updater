@@ -1,3 +1,10 @@
+# [1.0.0-develop.6](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.5...v1.0.0-develop.6) (2022-05-19)
+
+
+### Bug Fixes
+
+* Try to fix the push permission issue ([8460e70](https://github.com/sebbo2002/action-template-updater/commit/8460e70ff576cc8218f7ecf3babc375c723534d5))
+
 # [1.0.0-develop.5](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.4...v1.0.0-develop.5) (2022-05-14)
 
 # [1.0.0-develop.4](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.3...v1.0.0-develop.4) (2022-05-13)
