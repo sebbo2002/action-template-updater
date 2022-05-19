@@ -311,7 +311,13 @@ export default class Action {
 
     public addTokenToRepositoryUrl (url: string): string {
         const urlObj = new URL(url);
-        urlObj.username = this.token;
+        if(process.env.GITHUB_ACTOR) {
+            urlObj.username = process.env.GITHUB_ACTOR;
+            urlObj.password = this.token;
+        } else {
+            urlObj.username = this.token;
+        }
+
         return urlObj.toString();
     }
 
