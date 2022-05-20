@@ -64,18 +64,19 @@ describe('Action', function () {
             const context: Context = {
                 owner: 'sebbo2002',
                 repo: 'ical-generator',
-                template: 'sebbo2002/js-template',
+                template: 'sebbo2002/js-template/typescript-docker',
                 assignees: []
             };
             const action = new Action(token, context, core);
-            const repo = await action.getTemplate();
+            const result = await action.getTemplateAndBranch();
 
-            assert.deepEqual(repo, {
+            assert.deepEqual(result.template, {
                 name: 'js-template',
                 owner: 'sebbo2002',
                 url: 'https://github.com/sebbo2002/js-template',
                 cloneUrl: 'https://github.com/sebbo2002/js-template.git'
             });
+            assert.equal(result.templateBranch.name, 'typescript-docker');
         });
         it('should throw error if invalid', async function () {
             const context: Context = {
@@ -87,7 +88,7 @@ describe('Action', function () {
             const action = new Action(token, context, core);
 
             await assert.rejects(async () => {
-                await action.getTemplate();
+                await action.getTemplateAndBranch();
             }, /Unable to find template sebbo2002\/not-found/);
         });
     });
@@ -100,63 +101,10 @@ describe('Action', function () {
                 assignees: []
             };
             const action = new Action(token, context, core);
-            await action.findPullRequest('develop', 'sebbo2002');
+            await action.findPullRequest('develop');
         });
     });
-    describe('getTemplateBranches()', function () {
-        it('should work for typescript repos', async function () {
-            const context: Context = {
-                owner: 'sebbo2002',
-                repo: 'ical-generator',
-                template: 'sebbo2002/js-template',
-                assignees: []
-            };
-            const action = new Action(token, context, core);
-            const branch = await action.getTemplateBranch({
-                name: 'js-template',
-                owner: 'sebbo2002',
-                url: '',
-                cloneUrl: ''
-            });
-
-            assert.strictEqual(branch.name, 'typescript');
-        });
-        it('should work for javascript repos', async function () {
-            const context: Context = {
-                owner: 'sebbo2002',
-                repo: 'ble2mqtt',
-                template: 'sebbo2002/js-template',
-                assignees: []
-            };
-            const action = new Action(token, context, core);
-            const branch = await action.getTemplateBranch({
-                name: 'js-template',
-                owner: 'sebbo2002',
-                url: '',
-                cloneUrl: ''
-            });
-
-            assert.strictEqual(branch.name, 'javascript-docker');
-        });
-        it('should work for github-action repos', async function () {
-            const context: Context = {
-                owner: 'sebbo2002',
-                repo: 'action-is-semantic-pr',
-                template: 'sebbo2002/js-template',
-                assignees: []
-            };
-            const action = new Action(token, context, core);
-            const branch = await action.getTemplateBranch({
-                name: 'js-template',
-                owner: 'sebbo2002',
-                url: '',
-                cloneUrl: ''
-            });
-
-            assert.strictEqual(branch.name, 'github-actions');
-        });
-    });
-    /* describe('addTokenToRepositoryUrl()', function () {
+    describe('addTokenToRepositoryUrl()', function () {
         it('should work', async function () {
             const context: Context = {
                 owner: 'sebbo2002',
@@ -168,7 +116,7 @@ describe('Action', function () {
             const url = action.addTokenToRepositoryUrl('https://github.com/sebbo2002/ical-generator.git');
             assert.strictEqual(url, 'https://hello-world@github.com/sebbo2002/ical-generator.git');
         });
-    }); */
+    });
     describe('createUpdateBranch()', function () {
         it('should work (dry-run)', async function() {
             const context: Context = {
@@ -190,26 +138,11 @@ describe('Action', function () {
             };
             const branch: TemplateBranch = {
                 name: 'typescript',
-                sha: '',
-                parents: [],
-                commits: [],
-                unique: []
+                sha: ''
             };
 
             const action = new Action(token, context, core);
             await action.createUpdateBranch(repository, template, branch, 'unit-test', false);
-        });
-    });
-
-    describe('Playground', function () {
-        it('@sebbo2002/action-is-semantic-pr', async function () {
-            const context: Context = {
-                owner: 'sebbo2002',
-                repo: 'fhem-log2db',
-                template: 'sebbo2002/js-template',
-                assignees: ['sebbo2002']
-            };
-            await new Action(token, context, core).run();
         });
     });
 });

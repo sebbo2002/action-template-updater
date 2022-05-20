@@ -6,8 +6,8 @@ inputs:
     description: 'GitHub token to be used'
     required: true
   template:
-    description: 'Template repository to be used'
-    default: sebbo2002/js-template
+    description: 'Template repository to be used (orga/repo/branch)'
+    default: sebbo2002/js-template/typescript
     required: true
   assignees:
     description: 'Users that should be assigned to the pull request, split by comma'
