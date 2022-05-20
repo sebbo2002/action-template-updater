@@ -104,28 +104,6 @@ describe('Action', function () {
             await action.findPullRequest('develop');
         });
     });
-    describe('addTokenToRepositoryUrl()', function () {
-        let actor: string | undefined = undefined;
-        before(function () {
-            actor = process.env.GITHUB_ACTOR;
-            process.env.GITHUB_ACTOR = undefined;
-        });
-        after(function () {
-            process.env.GITHUB_ACTOR = actor;
-        });
-
-        it('should work', async function () {
-            const context: Context = {
-                owner: 'sebbo2002',
-                repo: 'ical-generator',
-                template: 'sebbo2002/js-template',
-                assignees: []
-            };
-            const action = new Action('hello-world', context, core);
-            const url = action.addTokenToRepositoryUrl('https://github.com/sebbo2002/ical-generator.git');
-            assert.strictEqual(url, 'https://hello-world@github.com/sebbo2002/ical-generator.git');
-        });
-    });
     describe('createUpdateBranch()', function () {
         it('should work (dry-run)', async function() {
             const context: Context = {
