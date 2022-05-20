@@ -28,9 +28,6 @@ export interface TemplateBranchCommit {
 export interface TemplateBranch {
     name: string;
     sha: string;
-    parents: string[];
-    commits: TemplateBranchCommit[];
-    unique: string[];
 }
 export default class Action {
     private readonly github;
@@ -44,10 +41,11 @@ export default class Action {
     run(): Promise<void>;
     getTokenUser(): Promise<string>;
     getRepository(): Promise<Repository>;
-    getTemplate(): Promise<TemplateContext>;
-    findPullRequest(defaultBranch: string, tokenUser: string): Promise<null | PullRequest>;
-    getTemplateBranch(template: TemplateContext): Promise<TemplateBranch>;
-    private detectTemplateBranch;
+    getTemplateAndBranch(): Promise<{
+        template: TemplateContext;
+        templateBranch: TemplateBranch;
+    }>;
+    findPullRequest(defaultBranch: string): Promise<null | PullRequest>;
     private repoIncludesCommit;
     addTokenToRepositoryUrl(url: string): string;
     createUpdateBranch(repository: Repository, template: TemplateContext, branch: TemplateBranch, username: string, push?: boolean): Promise<void>;

@@ -15511,13 +15511,12 @@ class Action {
         return __awaiter(this, void 0, void 0, function* () {
             const tokenUserName = yield this.getTokenUser();
             const repository = yield this.getRepository();
-            const template = yield this.getTemplate();
+            const { template, templateBranch } = yield this.getTemplateAndBranch();
             if (this.context.owner == template.owner && this.context.repo === template.name) {
                 this.core.notice('Repository and template are the same, stop here…');
                 return;
             }
-            let pr = yield this.findPullRequest(repository.defaultBranch, tokenUserName);
-            const templateBranch = yield this.getTemplateBranch(template);
+            let pr = yield this.findPullRequest(repository.defaultBranch);
             if (yield this.repoIncludesCommit(templateBranch.sha)) {
                 this.core.info(`Latest template commit (${templateBranch.sha.substring(0, 8)}) included in repository.`);
                 this.core.notice('Repository seems to be up to date, stop here…');
@@ -15563,15 +15562,18 @@ class Action {
             }
         });
     }
-    getTemplate() {
+    getTemplateAndBranch() {
         return __awaiter(this, void 0, void 0, function* () {
-            const [owner, repo] = this.context.template.split('/');
+            const [owner, repo, branch] = this.context.template.split('/');
+            let template;
+            let defaultBranch;
             try {
                 const { data } = yield this.github.rest.repos.get({
                     owner,
                     repo
                 });
-                return {
+                defaultBranch = data.default_branch;
+                template = {
                     name: data.name,
                     owner: data.owner.login,
                     url: data.html_url,
@@ -15581,126 +15583,41 @@ class Action {
             catch (error) {
                 throw new Error(`Unable to find template ${owner}/${repo}: ${error}`);
             }
+            try {
+                const { data } = yield this.github.rest.repos.getBranch({
+                    owner,
+                    repo,
+                    branch: branch || defaultBranch || 'develop'
+                });
+                return {
+                    template,
+                    templateBranch: {
+                        name: data.name,
+                        sha: data.commit.sha
+                    }
+                };
+            }
+            catch (error) {
+                throw new Error(`Unable to find branch: ${error}`);
+            }
         });
     }
-    findPullRequest(defaultBranch, tokenUser) {
+    findPullRequest(defaultBranch) {
         var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
             this.core.startGroup('Check for existing PRs');
             const prs = yield this.github.rest.pulls.list(Object.assign(Object.assign({}, this.context), { base: Action.PR_BRANCH_UPDATE_NAME, head: defaultBranch, sort: 'updated', direction: 'desc', state: 'open' }));
-            const pr = prs.data.find(pr => {
-                var _a;
-                if (((_a = pr.user) === null || _a === void 0 ? void 0 : _a.login) !== tokenUser) {
-                    this.core.info(`Pull request #${pr.number} was not created by this bot (${tokenUser}). Ignore it…`);
-                    return null;
-                }
-                return pr;
-            });
-            if (pr) {
+            if (prs.data.length > 0) {
                 this.core.info('Found an existing pull request, continue with this one…');
             }
             this.core.endGroup();
-            if (pr) {
+            if (prs.data.length > 0) {
                 return {
-                    number: pr.number,
-                    assignees: (_b = (_a = pr.assignees) === null || _a === void 0 ? void 0 : _a.map(a => a.login)) !== null && _b !== void 0 ? _b : []
+                    number: prs.data[0].number,
+                    assignees: (_b = (_a = prs.data[0].assignees) === null || _a === void 0 ? void 0 : _a.map(a => a.login)) !== null && _b !== void 0 ? _b : []
                 };
             }
             return null;
-        });
-    }
-    getTemplateBranch(template) {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.core.startGroup('Scan template branches');
-            const { data: branches } = yield this.github.rest.repos.listBranches({
-                owner: template.owner,
-                repo: template.name
-            });
-            const branchNames = branches.map(branch => branch.name);
-            const branchesWithCommits = yield Promise.all(branchNames.map((branchName) => __awaiter(this, void 0, void 0, function* () {
-                const { data: commits } = yield this.github.rest.repos.listCommits({
-                    owner: template.owner,
-                    repo: template.name,
-                    sha: branchName
-                });
-                return {
-                    name: branchName,
-                    commits: commits
-                        .map(commit => {
-                        var _a;
-                        return ({
-                            sha: commit.sha,
-                            date: ((_a = commit.commit.author) === null || _a === void 0 ? void 0 : _a.date) ? new Date(commit.commit.author.date) : null,
-                            parents: commit.parents.map(parent => parent.sha)
-                        });
-                    }),
-                    minDate: Math.min(...commits
-                        .map(commit => { var _a; return (_a = commit.commit.author) === null || _a === void 0 ? void 0 : _a.date; })
-                        .filter(date => date)
-                        .map(date => new Date(date || '1970-01-01').getTime()))
-                };
-            })));
-            const minDate = Math.min(...branchesWithCommits.map(branch => branch.minDate));
-            const result = branchesWithCommits
-                .map(branch => {
-                let parents = [];
-                const unique = [];
-                for (const commit of branch.commits) {
-                    const branchesWithSameCommit = branchesWithCommits
-                        .filter(otherBranch => otherBranch.name !== branch.name &&
-                        otherBranch.commits.find(otherCommit => commit.sha === otherCommit.sha))
-                        .map(branch => branch.name);
-                    if (branchesWithSameCommit.length && branch.commits.indexOf(commit) === 0) {
-                        break;
-                    }
-                    if (branchesWithSameCommit.length && !parents.length) {
-                        parents = branchesWithSameCommit;
-                    }
-                    if (!branchesWithSameCommit.length &&
-                        commit.date &&
-                        new Date(commit.date).getTime() > minDate) {
-                        unique.push(commit.sha);
-                    }
-                }
-                return {
-                    name: branch.name,
-                    sha: branch.commits[0].sha,
-                    commits: branch.commits,
-                    parents,
-                    unique
-                };
-            })
-                .sort((a, b) => b.parents.indexOf(a.name));
-            for (const branch of result) {
-                this.core.info(`- ${branch.name}${branch.parents.length ? ` (extends ${branch.parents.join(', ')})` : ''}`);
-            }
-            const branch = yield this.detectTemplateBranch(result);
-            this.core.endGroup();
-            return branch;
-        });
-    }
-    detectTemplateBranch(branches) {
-        return __awaiter(this, void 0, void 0, function* () {
-            for (const branch of branches) {
-                if (branch.unique.length) {
-                    for (const sha of branch.unique) {
-                        if (yield this.repoIncludesCommit(sha)) {
-                            this.core.info(`Branch ${branch.name} detected as template branch (detected by unique commit ${sha.substring(0, 8)})`);
-                            return branch;
-                        }
-                        this.core.info(`Commit ${sha.substring(0, 8)} not found in repository`);
-                    }
-                }
-                else if (branch.commits.length) {
-                    for (const commit of branch.commits) {
-                        if (yield this.repoIncludesCommit(commit.sha)) {
-                            this.core.info(`Branch ${branch.name} detected as template branch (detected by commit ${commit.sha.substring(0, 8)})`);
-                            return branch;
-                        }
-                    }
-                }
-            }
-            throw new Error(`Unable to detect template branch. Is ${this.context.template} the correct template repository?`);
         });
     }
     repoIncludesCommit(sha) {

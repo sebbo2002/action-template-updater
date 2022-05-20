@@ -1,3 +1,15 @@
+# [1.0.0-develop.8](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.7...v1.0.0-develop.8) (2022-05-20)
+
+
+### Bug Fixes
+
+* Do not try to detect the branch ([9296fc9](https://github.com/sebbo2002/action-template-updater/commit/9296fc9a3db0dd13b81ebcacf677d9d3170ba8c0))
+
+
+### Features
+
+* Mini cli to run updater locally ([5d3dcd3](https://github.com/sebbo2002/action-template-updater/commit/5d3dcd30c182ebed27ab2dbb954714dfc2bf3b48))
+
 # [1.0.0-develop.7](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.6...v1.0.0-develop.7) (2022-05-20)
 
 
