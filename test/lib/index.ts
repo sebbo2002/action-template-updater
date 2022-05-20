@@ -105,6 +105,15 @@ describe('Action', function () {
         });
     });
     describe('addTokenToRepositoryUrl()', function () {
+        let actor: string | undefined = undefined;
+        before(function () {
+            actor = process.env.GITHUB_ACTOR;
+            process.env.GITHUB_ACTOR = undefined;
+        });
+        after(function () {
+            process.env.GITHUB_ACTOR = actor;
+        });
+
         it('should work', async function () {
             const context: Context = {
                 owner: 'sebbo2002',
