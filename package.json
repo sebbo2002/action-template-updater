@@ -50,7 +50,8 @@
     "coverage": "nyc mocha",
     "license-check": "license-checker --production --summary",
     "lint": "eslint . --ext .ts,.json",
-    "test": "mocha"
+    "test": "mocha",
+    "updater": "ts-node ./src/bin/updater.ts"
   },
   "version": "1.0.0"
 }

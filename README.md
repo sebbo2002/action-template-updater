@@ -12,9 +12,15 @@ Used in my [JavaScript Template](https://github.com/sebbo2002/js-template).
 uses: sebbo2002/action-template-updater
 with:
   token: ${{ secrets.GITHUB_TOKEN }}
-  template: sebbo2002/js-template
+  template: sebbo2002/js-template/typescript
   assignees:
     - sebbo2002
+```
+
+#### Or run via commandline:
+
+```
+npm run updater -- sebbo2002/js-template/typescript sebbo2002/my-repository-to-update
 ```
 
 
