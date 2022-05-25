@@ -1,10 +1,17 @@
-name: 'js-template'
+name: 'template-updater'
 author: 'Sebastian Pekarek'
-description: 'Template I use for my GutHub Actions'
+description: 'Updates a fork of a template repository by creating pull requests for changes'
 inputs:
   token:
     description: 'GitHub token to be used'
     required: true
+  template:
+    description: 'Template repository to be used (orga/repo/branch)'
+    default: sebbo2002/js-template/typescript
+    required: true
+  assignees:
+    description: 'Users that should be assigned to the pull request, split by comma'
+    required: false
 runs:
   using: 'node16'
   main: 'dist/index.js'
