@@ -15441,6 +15441,7 @@ const github_1 = __nccwpck_require__(5438);
 const lib_1 = __importDefault(__nccwpck_require__(6791));
 try {
     const token = core.getInput('token');
+    const botToken = core.getInput('bot-token') || token;
     const myContext = {
         owner: github_1.context.repo.owner,
         repo: github_1.context.repo.repo,
@@ -15450,7 +15451,7 @@ try {
             .map(u => u.trim())
             .filter(Boolean)
     };
-    const action = new lib_1.default(token, myContext, core);
+    const action = new lib_1.default(token, myContext, core, botToken);
     action.run().catch(error => core.setFailed(error.message));
 }
 catch (error) {
@@ -15490,7 +15491,7 @@ const path_1 = __nccwpck_require__(1017);
 const os_1 = __nccwpck_require__(2037);
 const url_1 = __nccwpck_require__(7310);
 class Action {
-    constructor(token, context, core) {
+    constructor(token, context, core, botToken = token) {
         this.commitCache = new Map();
         this.github = new rest_1.Octokit({
             auth: token,
@@ -15502,8 +15503,19 @@ class Action {
                 error: message => core.error(message)
             },
         });
+        this.botGithub = new rest_1.Octokit({
+            auth: botToken,
+            userAgent: '@sebbo2002/action-template-updater',
+            log: {
+                debug: () => ({}),
+                info: () => ({}),
+                warn: message => core.warning(message),
+                error: message => core.error(message)
+            },
+        });
         this.git = (0, simple_git_1.default)();
         this.token = token;
+        this.botToken = botToken;
         this.context = context;
         this.core = core;
     }
@@ -15685,7 +15697,7 @@ class Action {
         return __awaiter(this, void 0, void 0, function* () {
             if (!pr) {
                 this.core.info('Create Pull Request');
-                const data = yield this.github.rest.pulls.create(Object.assign(Object.assign({}, this.context), { head: Action.PR_BRANCH_UPDATE_NAME, base: repository.defaultBranch, title: '🔧 Update template', body: `This pull request merges the current state of [the template](${template.url}) used here into this project so that it is up to date.`, maintainer_can_modify: true }));
+                const data = yield this.botGithub.rest.pulls.create(Object.assign(Object.assign({}, this.context), { head: Action.PR_BRANCH_UPDATE_NAME, base: repository.defaultBranch, title: '🔧 Update template', body: `This pull request merges the current state of [the template](${template.url}) used here into this project so that it is up to date.`, maintainer_can_modify: true }));
                 pr = {
                     number: data.data.number,
                     assignees: (_b = (_a = data.data.assignees) === null || _a === void 0 ? void 0 : _a.map(a => a.login)) !== null && _b !== void 0 ? _b : []
@@ -15698,7 +15710,7 @@ class Action {
             const assigneesToAdd = this.context.assignees.filter(assignee => !pullRequest.assignees.includes(assignee));
             if (assigneesToAdd.length) {
                 this.core.info('Assign these users to pull request: ' + assigneesToAdd.join(', '));
-                this.github.rest.issues.addAssignees(Object.assign(Object.assign({}, this.context), { issue_number: pullRequest.number }));
+                this.botGithub.rest.issues.addAssignees(Object.assign(Object.assign({}, this.context), { issue_number: pullRequest.number }));
             }
             return pullRequest;
         });

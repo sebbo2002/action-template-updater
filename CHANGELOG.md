@@ -1,3 +1,10 @@
+# [1.0.0-develop.10](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.9...v1.0.0-develop.10) (2022-06-16)
+
+
+### Features
+
+* allow to configure bot token ([a48e1f8](https://github.com/sebbo2002/action-template-updater/commit/a48e1f8d7a6360601e43c364e44382a5a4022988))
+
 # [1.0.0-develop.9](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.8...v1.0.0-develop.9) (2022-06-10)
 
 # [1.0.0-develop.8](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.7...v1.0.0-develop.8) (2022-05-20)

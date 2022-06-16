@@ -31,13 +31,15 @@ export interface TemplateBranch {
 }
 export default class Action {
     private readonly github;
+    private readonly botGithub;
     private readonly git;
     private readonly context;
     private readonly token;
+    private readonly botToken;
     private readonly core;
     private readonly commitCache;
     private static readonly PR_BRANCH_UPDATE_NAME;
-    constructor(token: string, context: Context, core: CoreInterface);
+    constructor(token: string, context: Context, core: CoreInterface, botToken?: string);
     run(): Promise<void>;
     getTokenUser(): Promise<string>;
     getRepository(): Promise<Repository>;
