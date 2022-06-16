@@ -45,14 +45,16 @@ export interface TemplateBranch {
 
 export default class Action {
     private readonly github: Octokit;
+    private readonly botGithub: Octokit;
     private readonly git: SimpleGit;
     private readonly context: Context;
     private readonly token: string;
+    private readonly botToken: string;
     private readonly core: CoreInterface;
     private readonly commitCache: Map<string, boolean> = new Map();
     private static readonly PR_BRANCH_UPDATE_NAME = 'template-updater/update';
 
-    constructor (token: string, context: Context, core: CoreInterface) {
+    constructor (token: string, context: Context, core: CoreInterface, botToken = token) {
         this.github = new Octokit({
             auth: token,
             userAgent: '@sebbo2002/action-template-updater',
@@ -63,8 +65,19 @@ export default class Action {
                 error: message => core.error(message)
             },
         });
+        this.botGithub = new Octokit({
+            auth: botToken,
+            userAgent: '@sebbo2002/action-template-updater',
+            log: {
+                debug: () => ({}),
+                info: () => ({}),
+                warn: message => core.warning(message),
+                error: message => core.error(message)
+            },
+        });
         this.git = simpleGit();
         this.token = token;
+        this.botToken = botToken;
 
         this.context = context;
         this.core = core;
@@ -264,7 +277,7 @@ export default class Action {
     public async createOrUpdatePullRequest (pr: PullRequest | null, repository: Repository, template: TemplateContext): Promise<PullRequest> {
         if (!pr) {
             this.core.info('Create Pull Request');
-            const data = await this.github.rest.pulls.create({
+            const data = await this.botGithub.rest.pulls.create({
                 ...this.context,
                 head: Action.PR_BRANCH_UPDATE_NAME,
                 base: repository.defaultBranch,
@@ -284,7 +297,7 @@ export default class Action {
         const assigneesToAdd = this.context.assignees.filter(assignee => !pullRequest.assignees.includes(assignee));
         if (assigneesToAdd.length) {
             this.core.info('Assign these users to pull request: ' + assigneesToAdd.join(', '));
-            this.github.rest.issues.addAssignees({
+            this.botGithub.rest.issues.addAssignees({
                 ...this.context,
                 issue_number: pullRequest.number
             });

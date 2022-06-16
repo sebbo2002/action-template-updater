@@ -5,6 +5,7 @@ import Action from './lib';
 
 try {
     const token = core.getInput('token');
+    const botToken = core.getInput('bot-token') || token;
     const myContext = {
         owner: context.repo.owner,
         repo: context.repo.repo,
@@ -15,7 +16,7 @@ try {
             .filter(Boolean)
     };
 
-    const action = new Action(token, myContext, core);
+    const action = new Action(token, myContext, core, botToken);
     action.run().catch(error => core.setFailed(error.message));
 } catch (error) {
     if (error instanceof Error) {
