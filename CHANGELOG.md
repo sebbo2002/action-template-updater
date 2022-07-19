@@ -1,3 +1,19 @@
+# [1.0.0-develop.12](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.11...v1.0.0-develop.12) (2022-07-19)
+
+
+### Build System
+
+* Native ESM support ([7b86a4f](https://github.com/sebbo2002/action-template-updater/commit/7b86a4f1187c387a3a5792e1fb72d822b04e3631))
+
+
+* Merge branch 'typescript' into github-actions ([f4a742e](https://github.com/sebbo2002/action-template-updater/commit/f4a742ed013d172ff2c3e963987038113f8edcbb))
+
+
+### BREAKING CHANGES
+
+* Only Support for node.js >=14.13.1
+* Only Support for node.js ^12.20.0 || >=14.13.1
+
 # [1.0.0-develop.11](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.10...v1.0.0-develop.11) (2022-06-22)
 
 # [1.0.0-develop.10](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0-develop.9...v1.0.0-develop.10) (2022-06-16)
