@@ -1,7 +1,7 @@
 'use strict';
 
 import assert from 'assert';
-import { core, getBuffer } from '../../src/lib/core-mock';
+import { core, getBuffer } from '../../src/lib/core-mock.js';
 
 describe('CoreMock', function () {
     it('should support basic methods to work with', function () {
