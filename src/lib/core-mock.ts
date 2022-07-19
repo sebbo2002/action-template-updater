@@ -5,11 +5,13 @@ export type CoreInterface = {
     notice(message: string): void;
     startGroup(message: string): void;
     endGroup(): void;
+    setOutput(key: string, value: unknown): void;
 }
 
 export type CoreMockMessageString = ['info' | 'notice', string];
 export type CoreMockMessageError = ['error' | 'warning', string | Error];
-export type CoreMockMessage = CoreMockMessageString | CoreMockMessageError;
+export type CoreMockMessageOutput = ['output', string, unknown];
+export type CoreMockMessage = CoreMockMessageString | CoreMockMessageError | CoreMockMessageOutput;
 export type CoreMockGroup = ['group', string, CoreMockMessage[]];
 export type CoreMockBufferItem = CoreMockMessage | CoreMockGroup;
 
@@ -58,5 +60,10 @@ export const core: CoreInterface = {
         if (group) {
             group = undefined;
         }
+    },
+
+    setOutput (key: string, value: unknown): void {
+        const m: CoreMockMessageOutput = ['output', key, value];
+        buffer.push(m);
     }
 };
