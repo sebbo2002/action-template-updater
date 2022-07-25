@@ -1,25 +1,26 @@
-# template
+# action-template-updater
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
-Here would be a very short description of the project. So in this example it would be a short information that this is
-a template that I use to start new projects and services.
-
-
-## 🚨 Template Usage Checklist
-- [ ] Update project name in `package.json`
-- [ ] Create `main` and `develop` branches
-- [ ] Set `develop` as default branch
-- [ ] Update `action.yml` ([Branding Cheat Sheet](https://actions-cool.github.io/github-action-branding/))
-- [ ] Go through repo settings
+Updates a fork of a template repository by creating pull requests for changes.
+Used in my [JavaScript Template](https://github.com/sebbo2002/js-template).
 
 
 ## ⚡️ Quick Start
 
 ```
-uses: sebbo2002/action-foo-bar
+uses: sebbo2002/action-template-updater
 with:
   token: ${{ secrets.GITHUB_TOKEN }}
+  template: sebbo2002/js-template/typescript
+  assignees:
+    - sebbo2002
+```
+
+#### Or run via commandline:
+
+```
+npm run updater -- sebbo2002/js-template/typescript sebbo2002/my-repository-to-update
 ```
 
 
