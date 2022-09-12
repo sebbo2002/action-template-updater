@@ -1,3 +1,5 @@
+## [1.0.1](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0...v1.0.1) (2022-09-12)
+
 ## [1.0.1-develop.1](https://github.com/sebbo2002/action-template-updater/compare/v1.0.0...v1.0.1-develop.1) (2022-08-22)
 
 # 1.0.0 (2022-07-25)
