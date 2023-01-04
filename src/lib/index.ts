@@ -181,7 +181,7 @@ export default class Action {
 
     public async findPullRequest (defaultBranch: string): Promise<null | PullRequest> {
         this.core.startGroup('Check for existing PRs');
-        const prs = await this.github.rest.pulls.list({
+        const prs = await this.botGithub.rest.pulls.list({
             ...this.context,
             base: Action.PR_BRANCH_UPDATE_NAME,
             head: defaultBranch,
