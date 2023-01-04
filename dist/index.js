@@ -15095,7 +15095,7 @@ class Action {
         var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
             this.core.startGroup('Check for existing PRs');
-            const prs = yield this.github.rest.pulls.list(Object.assign(Object.assign({}, this.context), { base: Action.PR_BRANCH_UPDATE_NAME, head: defaultBranch, sort: 'updated', direction: 'desc', state: 'open' }));
+            const prs = yield this.botGithub.rest.pulls.list(Object.assign(Object.assign({}, this.context), { base: Action.PR_BRANCH_UPDATE_NAME, head: defaultBranch, sort: 'updated', direction: 'desc', state: 'open' }));
             if (prs.data.length > 0) {
                 this.core.info('Found an existing pull request, continue with this one…');
             }
