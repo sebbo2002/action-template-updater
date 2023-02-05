@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/sebbo2002/action-template-updater/compare/v1.0.2...v1.0.3) (2023-02-05)
+
+
+### Bug Fixes
+
+* Use bot token to check pull requests ([559064c](https://github.com/sebbo2002/action-template-updater/commit/559064c20d49fba42a84d9f941af3760ceec9192))
+
 ## [1.0.3-develop.3](https://github.com/sebbo2002/action-template-updater/compare/v1.0.3-develop.2...v1.0.3-develop.3) (2023-02-05)
 
 ## [1.0.3-develop.2](https://github.com/sebbo2002/action-template-updater/compare/v1.0.3-develop.1...v1.0.3-develop.2) (2023-01-04)
