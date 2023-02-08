@@ -15038,7 +15038,16 @@ class Action {
                 return;
             }
             yield this.createUpdateBranch(repository, template, templateBranch, tokenUserName);
-            pr = yield this.createOrUpdatePullRequest(pr, repository, template);
+            try {
+                pr = yield this.createOrUpdatePullRequest(pr, repository, template);
+            }
+            catch (error) {
+                if (String(error).includes('A pull request already exists for')) {
+                    this.core.info('Pull request already exists.');
+                    return;
+                }
+                throw error;
+            }
             if (pr) {
                 this.core.notice(`Pull Request #${pr.number} is up to date`);
             }

@@ -1,3 +1,10 @@
+# [1.1.0-develop.1](https://github.com/sebbo2002/action-template-updater/compare/v1.0.3...v1.1.0-develop.1) (2023-02-08)
+
+
+### Features
+
+* Handle "A pull request already exists" ([4d42ea0](https://github.com/sebbo2002/action-template-updater/commit/4d42ea08cd1456c756ccb9ada8eecf3bf5f7df39))
+
 ## [1.0.3](https://github.com/sebbo2002/action-template-updater/compare/v1.0.2...v1.0.3) (2023-02-05)
 
 
