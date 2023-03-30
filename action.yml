@@ -16,7 +16,7 @@ inputs:
     description: 'Users that should be assigned to the pull request, split by comma'
     required: false
 runs:
-  using: 'node18'
+  using: 'node16'
   main: 'dist/index.js'
 branding:
   icon: git-branch
