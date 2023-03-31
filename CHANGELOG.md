@@ -1,3 +1,10 @@
+# [2.0.0-develop.2](https://github.com/sebbo2002/action-template-updater/compare/v2.0.0-develop.1...v2.0.0-develop.2) (2023-03-31)
+
+
+### Bug Fixes
+
+* Update file extensions and add `ts-node --esm` flag ([ae46fe7](https://github.com/sebbo2002/action-template-updater/commit/ae46fe70dec8612beb0c01f5f7f7f74f98d85b54))
+
 # [2.0.0-develop.1](https://github.com/sebbo2002/action-template-updater/compare/v1.1.0-develop.1...v2.0.0-develop.1) (2023-02-12)
 
 
