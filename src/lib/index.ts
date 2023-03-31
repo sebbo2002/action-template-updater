@@ -1,6 +1,6 @@
 import { Octokit } from '@octokit/rest';
-import { CoreInterface } from './core-mock';
-import simpleGit, { SimpleGit } from 'simple-git';
+import { CoreInterface } from './core-mock.js';
+import { simpleGit, SimpleGit } from 'simple-git';
 import { mkdtemp, rm } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -100,7 +100,18 @@ export default class Action {
         }
 
         await this.createUpdateBranch(repository, template, templateBranch, tokenUserName);
-        pr = await this.createOrUpdatePullRequest(pr, repository, template);
+
+        try {
+            pr = await this.createOrUpdatePullRequest(pr, repository, template);
+        }
+        catch(error) {
+            if (String(error).includes('A pull request already exists for')) {
+                this.core.info('Pull request already exists.');
+                return;
+            }
+
+            throw error;
+        }
 
         if (pr) {
             this.core.notice(`Pull Request #${pr.number} is up to date`);
