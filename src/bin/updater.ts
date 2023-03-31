@@ -1,5 +1,5 @@
-import Action, { Context } from '../lib';
-import { CoreInterface, CoreMockMessage } from '../lib/core-mock';
+import Action, { Context } from '../lib/index.js';
+import { CoreInterface, CoreMockMessage } from '../lib/core-mock.js';
 
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
 if(!token) {

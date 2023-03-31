@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import { context } from '@actions/github';
 
-import Action from './lib';
+import Action from './lib/index.js';
 
 try {
     const token = core.getInput('token');

@@ -51,7 +51,7 @@
     "license-check": "license-checker --production --summary",
     "lint": "eslint . --ext .ts,.json",
     "test": "mocha",
-    "updater": "ts-node ./src/bin/updater.ts"
+    "updater": "ts-node --esm ./src/bin/updater.ts"
   },
   "type": "module",
   "version": "1.0.0"
