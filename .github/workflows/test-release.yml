@@ -20,7 +20,7 @@ jobs:
       - name: ☁️ Checkout Project
         uses: actions/checkout@v4
       - name: 🔧 Setup node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: 'npm'
@@ -28,6 +28,8 @@ jobs:
         run: npm ci
       - name: ⏳ Run tests
         run: npm run test
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   coverage:
     name: Code Coverage / Lint
@@ -37,7 +39,7 @@ jobs:
       - name: ☁️ Checkout Project
         uses: actions/checkout@v4
       - name: 🔧 Setup node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           cache: 'npm'
       - name: 📦 Install dependencies
@@ -46,6 +48,8 @@ jobs:
         run: npm run lint
       - name: ⚙️ Build project
         run: npm run build-all
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   license-checker:
     name: License Checker
@@ -55,7 +59,7 @@ jobs:
       - name: ☁️ Checkout Project
         uses: actions/checkout@v4
       - name: 🔧 Setup node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           cache: 'npm'
       - name: 📦 Install dependencies
@@ -81,7 +85,7 @@ jobs:
       - name: ☁️ Checkout Project
         uses: actions/checkout@v4
       - name: 🔧 Setup node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: 'npm'
