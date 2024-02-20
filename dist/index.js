@@ -13135,9 +13135,9 @@ var __reExport = (target, module, copyDefault, desc) => {
   }
   return target;
 };
-var __toCommonJS = /* @__PURE__ */ ((cache) => {
+var __toCommonJS = /* @__PURE__ */ ((cache2) => {
   return (module, temp) => {
-    return cache && cache.get(module) || (temp = __reExport(__markAsModule({}), module, 1), cache && cache.set(module, temp), temp);
+    return cache2 && cache2.get(module) || (temp = __reExport(__markAsModule({}), module, 1), cache2 && cache2.set(module, temp), temp);
   };
 })(typeof WeakMap !== "undefined" ? /* @__PURE__ */ new WeakMap() : 0);
 var __async = (__this, __arguments, generator) => {
@@ -13160,6 +13160,25 @@ var __async = (__this, __arguments, generator) => {
     step((generator = generator.apply(__this, __arguments)).next());
   });
 };
+
+// src/lib/args/pathspec.ts
+function pathspec(...paths) {
+  const key = new String(paths);
+  cache.set(key, paths);
+  return key;
+}
+function isPathSpec(path) {
+  return path instanceof String && cache.has(path);
+}
+function toPaths(pathSpec) {
+  return cache.get(pathSpec) || [];
+}
+var cache;
+var init_pathspec = __esm({
+  "src/lib/args/pathspec.ts"() {
+    cache = /* @__PURE__ */ new WeakMap();
+  }
+});
 
 // src/lib/errors/git-error.ts
 var GitError;
@@ -13299,6 +13318,12 @@ function pick(source, properties) {
 function delay(duration = 0) {
   return new Promise((done) => setTimeout(done, duration));
 }
+function orVoid(input) {
+  if (input === false) {
+    return void 0;
+  }
+  return input;
+}
 var NULL, NOOP, objectToString;
 var init_util = __esm({
   "src/lib/utils/util.ts"() {
@@ -13317,7 +13342,8 @@ function filterType(input, filter, def) {
   return arguments.length > 2 ? def : void 0;
 }
 function filterPrimitives(input, omit) {
-  return /number|string|boolean/.test(typeof input) && (!omit || !omit.includes(typeof input));
+  const type = isPathSpec(input) ? "string" : typeof input;
+  return /number|string|boolean/.test(type) && (!omit || !omit.includes(type));
 }
 function filterPlainObject(input) {
   return !!input && objectToString(input) === "[object Object]";
@@ -13329,6 +13355,7 @@ var filterArray, filterString, filterStringArray, filterStringOrStringArray, fil
 var init_argument_filters = __esm({
   "src/lib/utils/argument-filters.ts"() {
     init_util();
+    init_pathspec();
     filterArray = (input) => {
       return Array.isArray(input);
     };
@@ -13459,7 +13486,9 @@ function appendTaskOptions(options, commands = []) {
   }
   return Object.keys(options).reduce((commands2, key) => {
     const value = options[key];
-    if (filterPrimitives(value, ["boolean"])) {
+    if (isPathSpec(value)) {
+      commands2.push(value);
+    } else if (filterPrimitives(value, ["boolean"])) {
       commands2.push(key + "=" + value);
     } else {
       commands2.push(key);
@@ -13496,6 +13525,7 @@ var init_task_options = __esm({
   "src/lib/utils/task-options.ts"() {
     init_argument_filters();
     init_util();
+    init_pathspec();
   }
 });
 
@@ -13559,6 +13589,7 @@ __export(utils_exports, {
   isUserFunction: () => isUserFunction,
   last: () => last,
   objectToString: () => objectToString,
+  orVoid: () => orVoid,
   parseStringResponse: () => parseStringResponse,
   pick: () => pick,
   prefixedArray: () => prefixedArray,
@@ -13990,6 +14021,29 @@ var init_config = __esm({
       GitConfigScope2["worktree"] = "worktree";
       return GitConfigScope2;
     })(GitConfigScope || {});
+  }
+});
+
+// src/lib/tasks/diff-name-status.ts
+function isDiffNameStatus(input) {
+  return diffNameStatus.has(input);
+}
+var DiffNameStatus, diffNameStatus;
+var init_diff_name_status = __esm({
+  "src/lib/tasks/diff-name-status.ts"() {
+    DiffNameStatus = /* @__PURE__ */ ((DiffNameStatus2) => {
+      DiffNameStatus2["ADDED"] = "A";
+      DiffNameStatus2["COPIED"] = "C";
+      DiffNameStatus2["DELETED"] = "D";
+      DiffNameStatus2["MODIFIED"] = "M";
+      DiffNameStatus2["RENAMED"] = "R";
+      DiffNameStatus2["CHANGED"] = "T";
+      DiffNameStatus2["UNMERGED"] = "U";
+      DiffNameStatus2["UNKNOWN"] = "X";
+      DiffNameStatus2["BROKEN"] = "B";
+      return DiffNameStatus2;
+    })(DiffNameStatus || {});
+    diffNameStatus = new Set(Object.values(DiffNameStatus));
   }
 });
 
@@ -14628,6 +14682,21 @@ var init_commit = __esm({
   }
 });
 
+// src/lib/tasks/first-commit.ts
+function first_commit_default() {
+  return {
+    firstCommit() {
+      return this._runTask(straightThroughStringTask(["rev-list", "--max-parents=0", "HEAD"], true), trailingFunctionArgument(arguments));
+    }
+  };
+}
+var init_first_commit = __esm({
+  "src/lib/tasks/first-commit.ts"() {
+    init_utils();
+    init_task();
+  }
+});
+
 // src/lib/tasks/hash-object.ts
 function hashObjectTask(filePath, write) {
   const commands = ["hash-object", filePath];
@@ -14749,6 +14818,7 @@ var init_parse_diff_summary = __esm({
   "src/lib/parsers/parse-diff-summary.ts"() {
     init_log_format();
     init_DiffSummary();
+    init_diff_name_status();
     init_utils();
     statParser = [
       new LineParser(/(.+)\s+\|\s+(\d+)(\s+[+\-]+)?$/, (result, [file, changes, alterations = ""]) => {
@@ -14814,11 +14884,12 @@ var init_parse_diff_summary = __esm({
       })
     ];
     nameStatusParser = [
-      new LineParser(/([ACDMRTUXB])\s*(.+)$/, (result, [_status, file]) => {
+      new LineParser(/([ACDMRTUXB])([0-9]{0,3})\t(.[^\t]*)(\t(.[^\t]*))?$/, (result, [status, _similarity, from, _to, to]) => {
         result.changed++;
         result.files.push({
-          file,
+          file: to != null ? to : from,
           changes: 0,
+          status: orVoid(isDiffNameStatus(status) && status),
           insertions: 0,
           deletions: 0,
           binary: false
@@ -14954,7 +15025,7 @@ function parseLogOptions(opt = {}, customArgs = []) {
     suffix.push(`${opt.from || ""}${rangeOperator}${opt.to || ""}`);
   }
   if (filterString(opt.file)) {
-    suffix.push("--follow", opt.file);
+    command.push("--follow", pathspec(opt.file));
   }
   appendTaskOptions(userOptions(opt), command);
   return {
@@ -14991,6 +15062,7 @@ var excludeOptions;
 var init_log = __esm({
   "src/lib/tasks/log.ts"() {
     init_log_format();
+    init_pathspec();
     init_parse_list_log_summary();
     init_utils();
     init_task();
@@ -15381,6 +15453,29 @@ var init_push = __esm({
   }
 });
 
+// src/lib/tasks/show.ts
+function show_default() {
+  return {
+    showBuffer() {
+      const commands = ["show", ...getTrailingOptions(arguments, 1)];
+      if (!commands.includes("--binary")) {
+        commands.splice(1, 0, "--binary");
+      }
+      return this._runTask(straightThroughBufferTask(commands), trailingFunctionArgument(arguments));
+    },
+    show() {
+      const commands = ["show", ...getTrailingOptions(arguments, 1)];
+      return this._runTask(straightThroughStringTask(commands), trailingFunctionArgument(arguments));
+    }
+  };
+}
+var init_show = __esm({
+  "src/lib/tasks/show.ts"() {
+    init_utils();
+    init_task();
+  }
+});
+
 // src/lib/responses/FileStatusSummary.ts
 var fromPathRegex, FileStatusSummary;
 var init_FileStatusSummary = __esm({
@@ -15624,12 +15719,14 @@ var init_simple_git_api = __esm({
     init_checkout();
     init_commit();
     init_config();
+    init_first_commit();
     init_grep();
     init_hash_object();
     init_init();
     init_log();
     init_merge();
     init_push();
+    init_show();
     init_status();
     init_task();
     init_version();
@@ -15696,7 +15793,7 @@ var init_simple_git_api = __esm({
         return this._runTask(statusTask(getTrailingOptions(arguments)), trailingFunctionArgument(arguments));
       }
     };
-    Object.assign(SimpleGitApi.prototype, checkout_default(), commit_default(), config_default(), grep_default(), log_default(), version_default());
+    Object.assign(SimpleGitApi.prototype, checkout_default(), commit_default(), config_default(), first_commit_default(), grep_default(), log_default(), show_default(), version_default());
   }
 });
 
@@ -16629,9 +16726,6 @@ var require_git = __commonJS({
       const commands = ["rev-parse", ...getTrailingOptions2(arguments, true)];
       return this._runTask(straightThroughStringTask2(commands, true), trailingFunctionArgument2(arguments));
     };
-    Git2.prototype.show = function(options, then) {
-      return this._runTask(straightThroughStringTask2(["show", ...getTrailingOptions2(arguments, 1)]), trailingFunctionArgument2(arguments));
-    };
     Git2.prototype.clean = function(mode, options, then) {
       const usingCleanOptionsArray = isCleanOptionsArray2(mode);
       const cleanMode = usingCleanOptionsArray && mode.join("") || filterType2(mode, filterString2) || "";
@@ -16663,6 +16757,9 @@ var require_git = __commonJS({
   }
 });
 
+// src/lib/api.ts
+init_pathspec();
+
 // src/lib/errors/git-construct-error.ts
 init_git_error();
 var GitConstructError = class extends GitError {
@@ -16692,6 +16789,7 @@ init_task_configuration_error();
 init_check_is_repo();
 init_clean();
 init_config();
+init_diff_name_status();
 init_grep();
 init_reset();
 
@@ -16996,6 +17094,34 @@ function timeoutPlugin({
   }
 }
 
+// src/lib/plugins/suffix-paths.plugin.ts
+init_pathspec();
+function suffixPathsPlugin() {
+  return {
+    type: "spawn.args",
+    action(data) {
+      const prefix = [];
+      let suffix;
+      function append2(args) {
+        (suffix = suffix || []).push(...args);
+      }
+      for (let i = 0; i < data.length; i++) {
+        const param = data[i];
+        if (isPathSpec(param)) {
+          append2(toPaths(param));
+          continue;
+        }
+        if (param === "--") {
+          append2(data.slice(i + 1).flatMap((item) => isPathSpec(item) && toPaths(item) || item));
+          break;
+        }
+        prefix.push(param);
+      }
+      return !suffix ? prefix : [...prefix, "--", ...suffix.map(String)];
+    }
+  };
+}
+
 // src/lib/git-factory.ts
 init_utils();
 var Git = require_git();
@@ -17009,6 +17135,7 @@ function gitInstanceFactory(baseDir, options) {
     plugins.add(commandConfigPrefixingPlugin(config.config));
   }
   plugins.add(blockUnsafeOperationsPlugin(config.unsafe));
+  plugins.add(suffixPathsPlugin());
   plugins.add(completionDetectionPlugin(config.completion));
   config.abort && plugins.add(abortPlugin(config.abort));
   config.progress && plugins.add(progressMonitorPlugin(config.progress));
