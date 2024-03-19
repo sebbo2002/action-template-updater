@@ -40079,8 +40079,8 @@ class Action {
         });
     }
     findPullRequest(defaultBranch) {
-        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
             this.core.startGroup('Check for existing PRs');
             const prs = yield this.botGithub.rest.pulls.list(Object.assign(Object.assign({}, this.context), { base: Action.PR_BRANCH_UPDATE_NAME, head: defaultBranch, sort: 'updated', direction: 'desc', state: 'open' }));
             if (prs.data.length > 0) {
@@ -40127,8 +40127,8 @@ class Action {
         }
         return urlObj.toString();
     }
-    createUpdateBranch(repository, template, branch, username, push = true) {
-        return __awaiter(this, void 0, void 0, function* () {
+    createUpdateBranch(repository_1, template_1, branch_1, username_1) {
+        return __awaiter(this, arguments, void 0, function* (repository, template, branch, username, push = true) {
             this.core.startGroup('Create update branch for pull request');
             const tmp = yield (0,promises_namespaceObject.mkdtemp)((0,external_path_.join)((0,external_os_.tmpdir)(), 'action-template-updater'));
             try {
@@ -40157,8 +40157,8 @@ class Action {
         });
     }
     createOrUpdatePullRequest(pr, repository, template) {
-        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
             if (!pr) {
                 this.core.info('Create Pull Request');
                 const data = yield this.botGithub.rest.pulls.create(Object.assign(Object.assign({}, this.context), { head: Action.PR_BRANCH_UPDATE_NAME, base: repository.defaultBranch, title: '🔧 Update template', body: `This pull request merges the current state of [the template](${template.url}) used here into this project so that it is up to date.`, maintainer_can_modify: true }));
