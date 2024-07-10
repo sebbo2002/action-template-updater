@@ -4,32 +4,35 @@
     "url": "https://github.com/sebbo2002/js-template/issues"
   },
   "dependencies": {
-    "@actions/core": "^1.8.0",
-    "@actions/github": "^5.0.1"
+    "@actions/core": "^1.10.1",
+    "@actions/github": "^6.0.0"
   },
   "description": "A template that I use to start new projects and services.",
   "devDependencies": {
-    "@semantic-release/changelog": "^6.0.1",
+    "@eslint/js": "^9.6.0",
+    "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
-    "@semantic-release/npm": "^9.0.2",
-    "@types/express": "^4.17.13",
-    "@types/mocha": "^9.0.0",
-    "@types/node": "^18.0.0",
-    "@typescript-eslint/eslint-plugin": "^5.30.0",
-    "@typescript-eslint/parser": "^5.30.0",
-    "@vercel/ncc": "^0.36.1",
-    "c8": "^7.11.3",
-    "eslint": "^8.18.0",
-    "eslint-plugin-jsonc": "^2.3.0",
+    "@semantic-release/npm": "^12.0.1",
+    "@types/eslint__js": "^8.42.3",
+    "@types/express": "^4.17.21",
+    "@types/mocha": "^10.0.7",
+    "@types/node": "^20.14.10",
+    "@vercel/ncc": "^0.38.1",
+    "c8": "^10.1.2",
+    "eslint": "^9.6.0",
+    "eslint-plugin-jsonc": "^2.16.0",
     "esm": "^3.2.25",
     "license-checker": "^25.0.1",
-    "mocha": "^10.0.0",
+    "mocha": "^10.6.0",
     "mochawesome": "^7.1.3",
     "semantic-release-license": "^1.0.3",
     "source-map-support": "^0.5.21",
-    "ts-node": "^10.8.1",
-    "typescript": "^5.0.2"
+    "tsup": "^8.1.0",
+    "tsx": "^4.16.2",
+    "typedoc": "^0.26.3",
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^8.0.0-alpha.41"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -49,7 +52,7 @@
     "build-all": "./.github/workflows/build.sh",
     "coverage": "c8 mocha",
     "license-check": "license-checker --production --summary",
-    "lint": "eslint . --ext .ts,.json",
+    "lint": "eslint .",
     "test": "mocha"
   },
   "type": "module",
