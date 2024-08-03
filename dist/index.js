@@ -6159,6 +6159,8 @@ function useColors() {
 		return false;
 	}
 
+	let m;
+
 	// Is webkit? http://stackoverflow.com/a/16459606/376773
 	// document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
 	return (typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance) ||
@@ -6166,7 +6168,7 @@ function useColors() {
 		(typeof window !== 'undefined' && window.console && (window.console.firebug || (window.console.exception && window.console.table))) ||
 		// Is firefox >= v31?
 		// https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
-		(typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31) ||
+		(typeof navigator !== 'undefined' && navigator.userAgent && (m = navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/)) && parseInt(m[1], 10) >= 31) ||
 		// Double check webkit in userAgent just in case we are in a worker
 		(typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/));
 }
@@ -6795,11 +6797,11 @@ function getDate() {
 }
 
 /**
- * Invokes `util.format()` with the specified arguments and writes to stderr.
+ * Invokes `util.formatWithOptions()` with the specified arguments and writes to stderr.
  */
 
 function log(...args) {
-	return process.stderr.write(util.format(...args) + '\n');
+	return process.stderr.write(util.formatWithOptions(exports.inspectOpts, ...args) + '\n');
 }
 
 /**
@@ -7129,850 +7131,6 @@ function onceStrict (fn) {
   f.called = false
   return f
 }
-
-
-/***/ }),
-
-/***/ 254:
-/***/ ((module, exports, __nccwpck_require__) => {
-
-/* eslint-env browser */
-
-/**
- * This is the web browser implementation of `debug()`.
- */
-
-exports.formatArgs = formatArgs;
-exports.save = save;
-exports.load = load;
-exports.useColors = useColors;
-exports.storage = localstorage();
-exports.destroy = (() => {
-	let warned = false;
-
-	return () => {
-		if (!warned) {
-			warned = true;
-			console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
-		}
-	};
-})();
-
-/**
- * Colors.
- */
-
-exports.colors = [
-	'#0000CC',
-	'#0000FF',
-	'#0033CC',
-	'#0033FF',
-	'#0066CC',
-	'#0066FF',
-	'#0099CC',
-	'#0099FF',
-	'#00CC00',
-	'#00CC33',
-	'#00CC66',
-	'#00CC99',
-	'#00CCCC',
-	'#00CCFF',
-	'#3300CC',
-	'#3300FF',
-	'#3333CC',
-	'#3333FF',
-	'#3366CC',
-	'#3366FF',
-	'#3399CC',
-	'#3399FF',
-	'#33CC00',
-	'#33CC33',
-	'#33CC66',
-	'#33CC99',
-	'#33CCCC',
-	'#33CCFF',
-	'#6600CC',
-	'#6600FF',
-	'#6633CC',
-	'#6633FF',
-	'#66CC00',
-	'#66CC33',
-	'#9900CC',
-	'#9900FF',
-	'#9933CC',
-	'#9933FF',
-	'#99CC00',
-	'#99CC33',
-	'#CC0000',
-	'#CC0033',
-	'#CC0066',
-	'#CC0099',
-	'#CC00CC',
-	'#CC00FF',
-	'#CC3300',
-	'#CC3333',
-	'#CC3366',
-	'#CC3399',
-	'#CC33CC',
-	'#CC33FF',
-	'#CC6600',
-	'#CC6633',
-	'#CC9900',
-	'#CC9933',
-	'#CCCC00',
-	'#CCCC33',
-	'#FF0000',
-	'#FF0033',
-	'#FF0066',
-	'#FF0099',
-	'#FF00CC',
-	'#FF00FF',
-	'#FF3300',
-	'#FF3333',
-	'#FF3366',
-	'#FF3399',
-	'#FF33CC',
-	'#FF33FF',
-	'#FF6600',
-	'#FF6633',
-	'#FF9900',
-	'#FF9933',
-	'#FFCC00',
-	'#FFCC33'
-];
-
-/**
- * Currently only WebKit-based Web Inspectors, Firefox >= v31,
- * and the Firebug extension (any Firefox version) are known
- * to support "%c" CSS customizations.
- *
- * TODO: add a `localStorage` variable to explicitly enable/disable colors
- */
-
-// eslint-disable-next-line complexity
-function useColors() {
-	// NB: In an Electron preload script, document will be defined but not fully
-	// initialized. Since we know we're in Chrome, we'll just detect this case
-	// explicitly
-	if (typeof window !== 'undefined' && window.process && (window.process.type === 'renderer' || window.process.__nwjs)) {
-		return true;
-	}
-
-	// Internet Explorer and Edge do not support colors.
-	if (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
-		return false;
-	}
-
-	// Is webkit? http://stackoverflow.com/a/16459606/376773
-	// document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
-	return (typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance) ||
-		// Is firebug? http://stackoverflow.com/a/398120/376773
-		(typeof window !== 'undefined' && window.console && (window.console.firebug || (window.console.exception && window.console.table))) ||
-		// Is firefox >= v31?
-		// https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
-		(typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31) ||
-		// Double check webkit in userAgent just in case we are in a worker
-		(typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/));
-}
-
-/**
- * Colorize log arguments if enabled.
- *
- * @api public
- */
-
-function formatArgs(args) {
-	args[0] = (this.useColors ? '%c' : '') +
-		this.namespace +
-		(this.useColors ? ' %c' : ' ') +
-		args[0] +
-		(this.useColors ? '%c ' : ' ') +
-		'+' + module.exports.humanize(this.diff);
-
-	if (!this.useColors) {
-		return;
-	}
-
-	const c = 'color: ' + this.color;
-	args.splice(1, 0, c, 'color: inherit');
-
-	// The final "%c" is somewhat tricky, because there could be other
-	// arguments passed either before or after the %c, so we need to
-	// figure out the correct index to insert the CSS into
-	let index = 0;
-	let lastC = 0;
-	args[0].replace(/%[a-zA-Z%]/g, match => {
-		if (match === '%%') {
-			return;
-		}
-		index++;
-		if (match === '%c') {
-			// We only are interested in the *last* %c
-			// (the user may have provided their own)
-			lastC = index;
-		}
-	});
-
-	args.splice(lastC, 0, c);
-}
-
-/**
- * Invokes `console.debug()` when available.
- * No-op when `console.debug` is not a "function".
- * If `console.debug` is not available, falls back
- * to `console.log`.
- *
- * @api public
- */
-exports.log = console.debug || console.log || (() => {});
-
-/**
- * Save `namespaces`.
- *
- * @param {String} namespaces
- * @api private
- */
-function save(namespaces) {
-	try {
-		if (namespaces) {
-			exports.storage.setItem('debug', namespaces);
-		} else {
-			exports.storage.removeItem('debug');
-		}
-	} catch (error) {
-		// Swallow
-		// XXX (@Qix-) should we be logging these?
-	}
-}
-
-/**
- * Load `namespaces`.
- *
- * @return {String} returns the previously persisted debug modes
- * @api private
- */
-function load() {
-	let r;
-	try {
-		r = exports.storage.getItem('debug');
-	} catch (error) {
-		// Swallow
-		// XXX (@Qix-) should we be logging these?
-	}
-
-	// If debug isn't set in LS, and we're in Electron, try to load $DEBUG
-	if (!r && typeof process !== 'undefined' && 'env' in process) {
-		r = process.env.DEBUG;
-	}
-
-	return r;
-}
-
-/**
- * Localstorage attempts to return the localstorage.
- *
- * This is necessary because safari throws
- * when a user disables cookies/localstorage
- * and you attempt to access it.
- *
- * @return {LocalStorage}
- * @api private
- */
-
-function localstorage() {
-	try {
-		// TVMLKit (Apple TV JS Runtime) does not have a window object, just localStorage in the global context
-		// The Browser also has localStorage in the global context.
-		return localStorage;
-	} catch (error) {
-		// Swallow
-		// XXX (@Qix-) should we be logging these?
-	}
-}
-
-module.exports = __nccwpck_require__(8867)(exports);
-
-const {formatters} = module.exports;
-
-/**
- * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
- */
-
-formatters.j = function (v) {
-	try {
-		return JSON.stringify(v);
-	} catch (error) {
-		return '[UnexpectedJSONParseError]: ' + error.message;
-	}
-};
-
-
-/***/ }),
-
-/***/ 8867:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-
-/**
- * This is the common logic for both the Node.js and web browser
- * implementations of `debug()`.
- */
-
-function setup(env) {
-	createDebug.debug = createDebug;
-	createDebug.default = createDebug;
-	createDebug.coerce = coerce;
-	createDebug.disable = disable;
-	createDebug.enable = enable;
-	createDebug.enabled = enabled;
-	createDebug.humanize = __nccwpck_require__(900);
-	createDebug.destroy = destroy;
-
-	Object.keys(env).forEach(key => {
-		createDebug[key] = env[key];
-	});
-
-	/**
-	* The currently active debug mode names, and names to skip.
-	*/
-
-	createDebug.names = [];
-	createDebug.skips = [];
-
-	/**
-	* Map of special "%n" handling functions, for the debug "format" argument.
-	*
-	* Valid key names are a single, lower or upper-case letter, i.e. "n" and "N".
-	*/
-	createDebug.formatters = {};
-
-	/**
-	* Selects a color for a debug namespace
-	* @param {String} namespace The namespace string for the debug instance to be colored
-	* @return {Number|String} An ANSI color code for the given namespace
-	* @api private
-	*/
-	function selectColor(namespace) {
-		let hash = 0;
-
-		for (let i = 0; i < namespace.length; i++) {
-			hash = ((hash << 5) - hash) + namespace.charCodeAt(i);
-			hash |= 0; // Convert to 32bit integer
-		}
-
-		return createDebug.colors[Math.abs(hash) % createDebug.colors.length];
-	}
-	createDebug.selectColor = selectColor;
-
-	/**
-	* Create a debugger with the given `namespace`.
-	*
-	* @param {String} namespace
-	* @return {Function}
-	* @api public
-	*/
-	function createDebug(namespace) {
-		let prevTime;
-		let enableOverride = null;
-		let namespacesCache;
-		let enabledCache;
-
-		function debug(...args) {
-			// Disabled?
-			if (!debug.enabled) {
-				return;
-			}
-
-			const self = debug;
-
-			// Set `diff` timestamp
-			const curr = Number(new Date());
-			const ms = curr - (prevTime || curr);
-			self.diff = ms;
-			self.prev = prevTime;
-			self.curr = curr;
-			prevTime = curr;
-
-			args[0] = createDebug.coerce(args[0]);
-
-			if (typeof args[0] !== 'string') {
-				// Anything else let's inspect with %O
-				args.unshift('%O');
-			}
-
-			// Apply any `formatters` transformations
-			let index = 0;
-			args[0] = args[0].replace(/%([a-zA-Z%])/g, (match, format) => {
-				// If we encounter an escaped % then don't increase the array index
-				if (match === '%%') {
-					return '%';
-				}
-				index++;
-				const formatter = createDebug.formatters[format];
-				if (typeof formatter === 'function') {
-					const val = args[index];
-					match = formatter.call(self, val);
-
-					// Now we need to remove `args[index]` since it's inlined in the `format`
-					args.splice(index, 1);
-					index--;
-				}
-				return match;
-			});
-
-			// Apply env-specific formatting (colors, etc.)
-			createDebug.formatArgs.call(self, args);
-
-			const logFn = self.log || createDebug.log;
-			logFn.apply(self, args);
-		}
-
-		debug.namespace = namespace;
-		debug.useColors = createDebug.useColors();
-		debug.color = createDebug.selectColor(namespace);
-		debug.extend = extend;
-		debug.destroy = createDebug.destroy; // XXX Temporary. Will be removed in the next major release.
-
-		Object.defineProperty(debug, 'enabled', {
-			enumerable: true,
-			configurable: false,
-			get: () => {
-				if (enableOverride !== null) {
-					return enableOverride;
-				}
-				if (namespacesCache !== createDebug.namespaces) {
-					namespacesCache = createDebug.namespaces;
-					enabledCache = createDebug.enabled(namespace);
-				}
-
-				return enabledCache;
-			},
-			set: v => {
-				enableOverride = v;
-			}
-		});
-
-		// Env-specific initialization logic for debug instances
-		if (typeof createDebug.init === 'function') {
-			createDebug.init(debug);
-		}
-
-		return debug;
-	}
-
-	function extend(namespace, delimiter) {
-		const newDebug = createDebug(this.namespace + (typeof delimiter === 'undefined' ? ':' : delimiter) + namespace);
-		newDebug.log = this.log;
-		return newDebug;
-	}
-
-	/**
-	* Enables a debug mode by namespaces. This can include modes
-	* separated by a colon and wildcards.
-	*
-	* @param {String} namespaces
-	* @api public
-	*/
-	function enable(namespaces) {
-		createDebug.save(namespaces);
-		createDebug.namespaces = namespaces;
-
-		createDebug.names = [];
-		createDebug.skips = [];
-
-		let i;
-		const split = (typeof namespaces === 'string' ? namespaces : '').split(/[\s,]+/);
-		const len = split.length;
-
-		for (i = 0; i < len; i++) {
-			if (!split[i]) {
-				// ignore empty strings
-				continue;
-			}
-
-			namespaces = split[i].replace(/\*/g, '.*?');
-
-			if (namespaces[0] === '-') {
-				createDebug.skips.push(new RegExp('^' + namespaces.slice(1) + '$'));
-			} else {
-				createDebug.names.push(new RegExp('^' + namespaces + '$'));
-			}
-		}
-	}
-
-	/**
-	* Disable debug output.
-	*
-	* @return {String} namespaces
-	* @api public
-	*/
-	function disable() {
-		const namespaces = [
-			...createDebug.names.map(toNamespace),
-			...createDebug.skips.map(toNamespace).map(namespace => '-' + namespace)
-		].join(',');
-		createDebug.enable('');
-		return namespaces;
-	}
-
-	/**
-	* Returns true if the given mode name is enabled, false otherwise.
-	*
-	* @param {String} name
-	* @return {Boolean}
-	* @api public
-	*/
-	function enabled(name) {
-		if (name[name.length - 1] === '*') {
-			return true;
-		}
-
-		let i;
-		let len;
-
-		for (i = 0, len = createDebug.skips.length; i < len; i++) {
-			if (createDebug.skips[i].test(name)) {
-				return false;
-			}
-		}
-
-		for (i = 0, len = createDebug.names.length; i < len; i++) {
-			if (createDebug.names[i].test(name)) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	* Convert regexp to namespace
-	*
-	* @param {RegExp} regxep
-	* @return {String} namespace
-	* @api private
-	*/
-	function toNamespace(regexp) {
-		return regexp.toString()
-			.substring(2, regexp.toString().length - 2)
-			.replace(/\.\*\?$/, '*');
-	}
-
-	/**
-	* Coerce `val`.
-	*
-	* @param {Mixed} val
-	* @return {Mixed}
-	* @api private
-	*/
-	function coerce(val) {
-		if (val instanceof Error) {
-			return val.stack || val.message;
-		}
-		return val;
-	}
-
-	/**
-	* XXX DO NOT USE. This is a temporary stub function.
-	* XXX It WILL be removed in the next major release.
-	*/
-	function destroy() {
-		console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
-	}
-
-	createDebug.enable(createDebug.load());
-
-	return createDebug;
-}
-
-module.exports = setup;
-
-
-/***/ }),
-
-/***/ 2179:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-/**
- * Detect Electron renderer / nwjs process, which is node, but we should
- * treat as a browser.
- */
-
-if (typeof process === 'undefined' || process.type === 'renderer' || process.browser === true || process.__nwjs) {
-	module.exports = __nccwpck_require__(254);
-} else {
-	module.exports = __nccwpck_require__(675);
-}
-
-
-/***/ }),
-
-/***/ 675:
-/***/ ((module, exports, __nccwpck_require__) => {
-
-/**
- * Module dependencies.
- */
-
-const tty = __nccwpck_require__(6224);
-const util = __nccwpck_require__(3837);
-
-/**
- * This is the Node.js implementation of `debug()`.
- */
-
-exports.init = init;
-exports.log = log;
-exports.formatArgs = formatArgs;
-exports.save = save;
-exports.load = load;
-exports.useColors = useColors;
-exports.destroy = util.deprecate(
-	() => {},
-	'Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.'
-);
-
-/**
- * Colors.
- */
-
-exports.colors = [6, 2, 3, 4, 5, 1];
-
-try {
-	// Optional dependency (as in, doesn't need to be installed, NOT like optionalDependencies in package.json)
-	// eslint-disable-next-line import/no-extraneous-dependencies
-	const supportsColor = __nccwpck_require__(9318);
-
-	if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
-		exports.colors = [
-			20,
-			21,
-			26,
-			27,
-			32,
-			33,
-			38,
-			39,
-			40,
-			41,
-			42,
-			43,
-			44,
-			45,
-			56,
-			57,
-			62,
-			63,
-			68,
-			69,
-			74,
-			75,
-			76,
-			77,
-			78,
-			79,
-			80,
-			81,
-			92,
-			93,
-			98,
-			99,
-			112,
-			113,
-			128,
-			129,
-			134,
-			135,
-			148,
-			149,
-			160,
-			161,
-			162,
-			163,
-			164,
-			165,
-			166,
-			167,
-			168,
-			169,
-			170,
-			171,
-			172,
-			173,
-			178,
-			179,
-			184,
-			185,
-			196,
-			197,
-			198,
-			199,
-			200,
-			201,
-			202,
-			203,
-			204,
-			205,
-			206,
-			207,
-			208,
-			209,
-			214,
-			215,
-			220,
-			221
-		];
-	}
-} catch (error) {
-	// Swallow - we only care if `supports-color` is available; it doesn't have to be.
-}
-
-/**
- * Build up the default `inspectOpts` object from the environment variables.
- *
- *   $ DEBUG_COLORS=no DEBUG_DEPTH=10 DEBUG_SHOW_HIDDEN=enabled node script.js
- */
-
-exports.inspectOpts = Object.keys(process.env).filter(key => {
-	return /^debug_/i.test(key);
-}).reduce((obj, key) => {
-	// Camel-case
-	const prop = key
-		.substring(6)
-		.toLowerCase()
-		.replace(/_([a-z])/g, (_, k) => {
-			return k.toUpperCase();
-		});
-
-	// Coerce string value into JS value
-	let val = process.env[key];
-	if (/^(yes|on|true|enabled)$/i.test(val)) {
-		val = true;
-	} else if (/^(no|off|false|disabled)$/i.test(val)) {
-		val = false;
-	} else if (val === 'null') {
-		val = null;
-	} else {
-		val = Number(val);
-	}
-
-	obj[prop] = val;
-	return obj;
-}, {});
-
-/**
- * Is stdout a TTY? Colored output is enabled when `true`.
- */
-
-function useColors() {
-	return 'colors' in exports.inspectOpts ?
-		Boolean(exports.inspectOpts.colors) :
-		tty.isatty(process.stderr.fd);
-}
-
-/**
- * Adds ANSI color escape codes if enabled.
- *
- * @api public
- */
-
-function formatArgs(args) {
-	const {namespace: name, useColors} = this;
-
-	if (useColors) {
-		const c = this.color;
-		const colorCode = '\u001B[3' + (c < 8 ? c : '8;5;' + c);
-		const prefix = `  ${colorCode};1m${name} \u001B[0m`;
-
-		args[0] = prefix + args[0].split('\n').join('\n' + prefix);
-		args.push(colorCode + 'm+' + module.exports.humanize(this.diff) + '\u001B[0m');
-	} else {
-		args[0] = getDate() + name + ' ' + args[0];
-	}
-}
-
-function getDate() {
-	if (exports.inspectOpts.hideDate) {
-		return '';
-	}
-	return new Date().toISOString() + ' ';
-}
-
-/**
- * Invokes `util.formatWithOptions()` with the specified arguments and writes to stderr.
- */
-
-function log(...args) {
-	return process.stderr.write(util.formatWithOptions(exports.inspectOpts, ...args) + '\n');
-}
-
-/**
- * Save `namespaces`.
- *
- * @param {String} namespaces
- * @api private
- */
-function save(namespaces) {
-	if (namespaces) {
-		process.env.DEBUG = namespaces;
-	} else {
-		// If you set a process.env field to null or undefined, it gets cast to the
-		// string 'null' or 'undefined'. Just delete instead.
-		delete process.env.DEBUG;
-	}
-}
-
-/**
- * Load `namespaces`.
- *
- * @return {String} returns the previously persisted debug modes
- * @api private
- */
-
-function load() {
-	return process.env.DEBUG;
-}
-
-/**
- * Init logic for `debug` instances.
- *
- * Create a new `inspectOpts` object in case `useColors` is set
- * differently for a particular `debug` instance.
- */
-
-function init(debug) {
-	debug.inspectOpts = {};
-
-	const keys = Object.keys(exports.inspectOpts);
-	for (let i = 0; i < keys.length; i++) {
-		debug.inspectOpts[keys[i]] = exports.inspectOpts[keys[i]];
-	}
-}
-
-module.exports = __nccwpck_require__(8867)(exports);
-
-const {formatters} = module.exports;
-
-/**
- * Map %o to `util.inspect()`, all on a single line.
- */
-
-formatters.o = function (v) {
-	this.inspectOpts.colors = this.useColors;
-	return util.inspect(v, this.inspectOpts)
-		.split('\n')
-		.map(str => str.trim())
-		.join(' ');
-};
-
-/**
- * Map %O to `util.inspect()`, allowing multiple lines if needed.
- */
-
-formatters.O = function (v) {
-	this.inspectOpts.colors = this.useColors;
-	return util.inspect(v, this.inspectOpts);
-};
 
 
 /***/ }),
@@ -33566,11 +32724,11 @@ class RequestError extends Error {
   response;
   constructor(message, statusCode, options) {
     super(message);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
     this.name = "HttpError";
-    this.status = statusCode;
+    this.status = Number.parseInt(statusCode);
+    if (Number.isNaN(this.status)) {
+      this.status = 0;
+    }
     if ("response" in options) {
       this.response = options.response;
     }
@@ -33593,144 +32751,128 @@ class RequestError extends Error {
 // pkg/dist-src/index.js
 
 
+// pkg/dist-src/defaults.js
+
 
 // pkg/dist-src/version.js
 var dist_bundle_VERSION = "0.0.0-development";
 
+// pkg/dist-src/defaults.js
+var defaults_default = {
+  headers: {
+    "user-agent": `octokit-request.js/${dist_bundle_VERSION} ${getUserAgent()}`
+  }
+};
+
 // pkg/dist-src/is-plain-object.js
 function dist_bundle_isPlainObject(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
+  if (typeof value !== "object" || value === null) return false;
+  if (Object.prototype.toString.call(value) !== "[object Object]") return false;
   const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
+  if (proto === null) return true;
   const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
   return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
 }
 
 // pkg/dist-src/fetch-wrapper.js
 
-
-// pkg/dist-src/get-buffer-response.js
-function getBufferResponse(response) {
-  return response.arrayBuffer();
-}
-
-// pkg/dist-src/fetch-wrapper.js
-function fetchWrapper(requestOptions) {
-  const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
-  const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  if (dist_bundle_isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body)) {
-    requestOptions.body = JSON.stringify(requestOptions.body);
-  }
-  let headers = {};
-  let status;
-  let url;
-  let { fetch } = globalThis;
-  if (requestOptions.request?.fetch) {
-    fetch = requestOptions.request.fetch;
-  }
+async function fetchWrapper(requestOptions) {
+  const fetch = requestOptions.request?.fetch || globalThis.fetch;
   if (!fetch) {
     throw new Error(
       "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
     );
   }
-  return fetch(requestOptions.url, {
-    method: requestOptions.method,
-    body: requestOptions.body,
-    redirect: requestOptions.request?.redirect,
-    // Header values must be `string`
-    headers: Object.fromEntries(
-      Object.entries(requestOptions.headers).map(([name, value]) => [
-        name,
-        String(value)
-      ])
-    ),
-    signal: requestOptions.request?.signal,
-    // duplex must be set if request.body is ReadableStream or Async Iterables.
-    // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
-    ...requestOptions.body && { duplex: "half" }
-  }).then(async (response) => {
-    url = response.url;
-    status = response.status;
-    for (const keyAndValue of response.headers) {
-      headers[keyAndValue[0]] = keyAndValue[1];
-    }
-    if ("deprecation" in headers) {
-      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
-      const deprecationLink = matches && matches.pop();
-      log.warn(
-        `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
-      );
-    }
-    if (status === 204 || status === 205) {
-      return;
-    }
-    if (requestOptions.method === "HEAD") {
-      if (status < 400) {
-        return;
+  const log = requestOptions.request?.log || console;
+  const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
+  const body = dist_bundle_isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body) ? JSON.stringify(requestOptions.body) : requestOptions.body;
+  const requestHeaders = Object.fromEntries(
+    Object.entries(requestOptions.headers).map(([name, value]) => [
+      name,
+      String(value)
+    ])
+  );
+  let fetchResponse;
+  try {
+    fetchResponse = await fetch(requestOptions.url, {
+      method: requestOptions.method,
+      body,
+      redirect: requestOptions.request?.redirect,
+      headers: requestHeaders,
+      signal: requestOptions.request?.signal,
+      // duplex must be set if request.body is ReadableStream or Async Iterables.
+      // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
+      ...requestOptions.body && { duplex: "half" }
+    });
+  } catch (error) {
+    let message = "Unknown Error";
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        error.status = 500;
+        throw error;
       }
-      throw new RequestError(response.statusText, status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: void 0
-        },
-        request: requestOptions
-      });
-    }
-    if (status === 304) {
-      throw new RequestError("Not modified", status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: await getResponseData(response)
-        },
-        request: requestOptions
-      });
-    }
-    if (status >= 400) {
-      const data = await getResponseData(response);
-      const error = new RequestError(toErrorMessage(data), status, {
-        response: {
-          url,
-          status,
-          headers,
-          data
-        },
-        request: requestOptions
-      });
-      throw error;
-    }
-    return parseSuccessResponseBody ? await getResponseData(response) : response.body;
-  }).then((data) => {
-    return {
-      status,
-      url,
-      headers,
-      data
-    };
-  }).catch((error) => {
-    if (error instanceof RequestError)
-      throw error;
-    else if (error.name === "AbortError")
-      throw error;
-    let message = error.message;
-    if (error.name === "TypeError" && "cause" in error) {
-      if (error.cause instanceof Error) {
-        message = error.cause.message;
-      } else if (typeof error.cause === "string") {
-        message = error.cause;
+      message = error.message;
+      if (error.name === "TypeError" && "cause" in error) {
+        if (error.cause instanceof Error) {
+          message = error.cause.message;
+        } else if (typeof error.cause === "string") {
+          message = error.cause;
+        }
       }
     }
-    throw new RequestError(message, 500, {
+    const requestError = new RequestError(message, 500, {
       request: requestOptions
     });
-  });
+    requestError.cause = error;
+    throw requestError;
+  }
+  const status = fetchResponse.status;
+  const url = fetchResponse.url;
+  const responseHeaders = {};
+  for (const [key, value] of fetchResponse.headers) {
+    responseHeaders[key] = value;
+  }
+  const octokitResponse = {
+    url,
+    status,
+    headers: responseHeaders,
+    data: ""
+  };
+  if ("deprecation" in responseHeaders) {
+    const matches = responseHeaders.link && responseHeaders.link.match(/<([^>]+)>; rel="deprecation"/);
+    const deprecationLink = matches && matches.pop();
+    log.warn(
+      `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${responseHeaders.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
+    );
+  }
+  if (status === 204 || status === 205) {
+    return octokitResponse;
+  }
+  if (requestOptions.method === "HEAD") {
+    if (status < 400) {
+      return octokitResponse;
+    }
+    throw new RequestError(fetchResponse.statusText, status, {
+      response: octokitResponse,
+      request: requestOptions
+    });
+  }
+  if (status === 304) {
+    octokitResponse.data = await getResponseData(fetchResponse);
+    throw new RequestError("Not modified", status, {
+      response: octokitResponse,
+      request: requestOptions
+    });
+  }
+  if (status >= 400) {
+    octokitResponse.data = await getResponseData(fetchResponse);
+    throw new RequestError(toErrorMessage(octokitResponse.data), status, {
+      response: octokitResponse,
+      request: requestOptions
+    });
+  }
+  octokitResponse.data = parseSuccessResponseBody ? await getResponseData(fetchResponse) : fetchResponse.body;
+  return octokitResponse;
 }
 async function getResponseData(response) {
   const contentType = response.headers.get("content-type");
@@ -33740,22 +32882,18 @@ async function getResponseData(response) {
   if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
     return response.text();
   }
-  return getBufferResponse(response);
+  return response.arrayBuffer();
 }
 function toErrorMessage(data) {
-  if (typeof data === "string")
+  if (typeof data === "string") {
     return data;
-  let suffix;
-  if ("documentation_url" in data) {
-    suffix = ` - ${data.documentation_url}`;
-  } else {
-    suffix = "";
+  }
+  if (data instanceof ArrayBuffer) {
+    return "Unknown error";
   }
   if ("message" in data) {
-    if (Array.isArray(data.errors)) {
-      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}${suffix}`;
-    }
-    return `${data.message}${suffix}`;
+    const suffix = "documentation_url" in data ? ` - ${data.documentation_url}` : "";
+    return Array.isArray(data.errors) ? `${data.message}: ${data.errors.map((v) => JSON.stringify(v)).join(", ")}${suffix}` : `${data.message}${suffix}`;
   }
   return `Unknown error: ${JSON.stringify(data)}`;
 }
@@ -33786,11 +32924,7 @@ function dist_bundle_withDefaults(oldEndpoint, newDefaults) {
 }
 
 // pkg/dist-src/index.js
-var request = dist_bundle_withDefaults(endpoint, {
-  headers: {
-    "user-agent": `octokit-request.js/${dist_bundle_VERSION} ${getUserAgent()}`
-  }
-});
+var request = dist_bundle_withDefaults(endpoint, defaults_default);
 
 
 ;// CONCATENATED MODULE: ./node_modules/@octokit/rest/node_modules/@octokit/graphql/dist-bundle/index.js
@@ -34153,8 +33287,7 @@ function normalizePaginatedListResponse(response) {
     };
   }
   const responseNeedsNormalization = "total_count" in response.data && !("url" in response.data);
-  if (!responseNeedsNormalization)
-    return response;
+  if (!responseNeedsNormalization) return response;
   const incompleteResults = response.data.incomplete_results;
   const repositorySelection = response.data.repository_selection;
   const totalCount = response.data.total_count;
@@ -34184,8 +33317,7 @@ function iterator(octokit, route, parameters) {
   return {
     [Symbol.asyncIterator]: () => ({
       async next() {
-        if (!url)
-          return { done: true };
+        if (!url) return { done: true };
         try {
           const response = await requestMethod({ method, url, headers });
           const normalizedResponse = normalizePaginatedListResponse(response);
@@ -34194,8 +33326,7 @@ function iterator(octokit, route, parameters) {
           ) || [])[1];
           return { value: normalizedResponse };
         } catch (error) {
-          if (error.status !== 409)
-            throw error;
+          if (error.status !== 409) throw error;
           url = "";
           return {
             value: {
@@ -34509,7 +33640,7 @@ paginateRest.VERSION = plugin_paginate_rest_dist_bundle_VERSION;
 
 
 ;// CONCATENATED MODULE: ./node_modules/@octokit/rest/node_modules/@octokit/plugin-rest-endpoint-methods/dist-src/version.js
-const plugin_rest_endpoint_methods_dist_src_version_VERSION = "13.2.1";
+const plugin_rest_endpoint_methods_dist_src_version_VERSION = "13.2.4";
 
 //# sourceMappingURL=version.js.map
 
@@ -36622,8 +35753,8 @@ const dist_src_Octokit = Octokit.plugin(requestLog, legacyRestEndpointMethods, p
 
 // EXTERNAL MODULE: ./node_modules/@kwsites/file-exists/dist/index.js
 var dist = __nccwpck_require__(4751);
-// EXTERNAL MODULE: ./node_modules/simple-git/node_modules/debug/src/index.js
-var src = __nccwpck_require__(2179);
+// EXTERNAL MODULE: ./node_modules/debug/src/index.js
+var src = __nccwpck_require__(8237);
 ;// CONCATENATED MODULE: external "child_process"
 const external_child_process_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("child_process");
 // EXTERNAL MODULE: ./node_modules/@kwsites/promise-deferred/dist/index.js
@@ -41438,15 +40569,6 @@ var external_os_ = __nccwpck_require__(2037);
 // EXTERNAL MODULE: external "url"
 var external_url_ = __nccwpck_require__(7310);
 ;// CONCATENATED MODULE: ./src/lib/index.ts
-var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 
 
 
@@ -41454,8 +40576,16 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 
 class Action {
+    github;
+    botGithub;
+    git;
+    context;
+    token;
+    botToken;
+    core;
+    commitCache = new Map();
+    static PR_BRANCH_UPDATE_NAME = 'template-updater/update';
     constructor(token, context, core, botToken = token) {
-        this.commitCache = new Map();
         this.github = new dist_src_Octokit({
             auth: token,
             userAgent: '@sebbo2002/action-template-updater',
@@ -41482,147 +40612,146 @@ class Action {
         this.context = context;
         this.core = core;
     }
-    run() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const tokenUserName = yield this.getTokenUser();
-            const repository = yield this.getRepository();
-            const { template, templateBranch } = yield this.getTemplateAndBranch();
-            if (this.context.owner == template.owner && this.context.repo === template.name) {
-                this.core.notice('Repository and template are the same, stop here…');
+    async run() {
+        const tokenUserName = await this.getTokenUser();
+        const repository = await this.getRepository();
+        const { template, templateBranch } = await this.getTemplateAndBranch();
+        if (this.context.owner == template.owner && this.context.repo === template.name) {
+            this.core.notice('Repository and template are the same, stop here…');
+            return;
+        }
+        let pr = await this.findPullRequest(repository.defaultBranch);
+        if (await this.repoIncludesCommit(templateBranch.sha)) {
+            this.core.info(`Latest template commit (${templateBranch.sha.substring(0, 8)}) included in repository.`);
+            this.core.notice('Repository seems to be up to date, stop here…');
+            return;
+        }
+        await this.createUpdateBranch(repository, template, templateBranch, tokenUserName);
+        try {
+            pr = await this.createOrUpdatePullRequest(pr, repository, template);
+        }
+        catch (error) {
+            if (String(error).includes('A pull request already exists for')) {
+                this.core.info('Pull request already exists.');
                 return;
             }
-            let pr = yield this.findPullRequest(repository.defaultBranch);
-            if (yield this.repoIncludesCommit(templateBranch.sha)) {
-                this.core.info(`Latest template commit (${templateBranch.sha.substring(0, 8)}) included in repository.`);
-                this.core.notice('Repository seems to be up to date, stop here…');
-                return;
-            }
-            yield this.createUpdateBranch(repository, template, templateBranch, tokenUserName);
-            try {
-                pr = yield this.createOrUpdatePullRequest(pr, repository, template);
-            }
-            catch (error) {
-                if (String(error).includes('A pull request already exists for')) {
-                    this.core.info('Pull request already exists.');
-                    return;
-                }
-                throw error;
-            }
-            if (pr) {
-                this.core.notice(`Pull Request #${pr.number} is up to date`);
-            }
-        });
+            throw error;
+        }
+        if (pr) {
+            this.core.notice(`Pull Request #${pr.number} is up to date`);
+        }
     }
-    getTokenUser() {
-        return __awaiter(this, void 0, void 0, function* () {
-            let tokenUserName = 'github-actions[bot]';
-            try {
-                const user = yield this.github.rest.users.getAuthenticated();
-                this.core.info(`Hello ${user.data.login}, nice to meet you 👋🏼`);
-                tokenUserName = user.data.login;
-            }
-            catch (error) {
-                this.core.info(`Unable to detect user, using default value ${tokenUserName}`);
-                this.core.info(String(error));
-            }
-            finally {
-                this.core.endGroup();
-            }
-            return tokenUserName;
-        });
-    }
-    getRepository() {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { data } = yield this.github.rest.repos.get(Object.assign({}, this.context));
-                return {
-                    name: data.name,
-                    defaultBranch: data.default_branch,
-                    cloneUrl: data.clone_url
-                };
-            }
-            catch (error) {
-                throw new Error(`Unable to find template: ${error}`);
-            }
-        });
-    }
-    getTemplateAndBranch() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const [owner, repo, branch] = this.context.template.split('/');
-            let template;
-            let defaultBranch;
-            try {
-                const { data } = yield this.github.rest.repos.get({
-                    owner,
-                    repo
-                });
-                defaultBranch = data.default_branch;
-                template = {
-                    name: data.name,
-                    owner: data.owner.login,
-                    url: data.html_url,
-                    cloneUrl: data.clone_url
-                };
-            }
-            catch (error) {
-                throw new Error(`Unable to find template ${owner}/${repo}: ${error}`);
-            }
-            try {
-                const { data } = yield this.github.rest.repos.getBranch({
-                    owner,
-                    repo,
-                    branch: branch || defaultBranch || 'develop'
-                });
-                return {
-                    template,
-                    templateBranch: {
-                        name: data.name,
-                        sha: data.commit.sha
-                    }
-                };
-            }
-            catch (error) {
-                throw new Error(`Unable to find branch: ${error}`);
-            }
-        });
-    }
-    findPullRequest(defaultBranch) {
-        return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b;
-            this.core.startGroup('Check for existing PRs');
-            const prs = yield this.botGithub.rest.pulls.list(Object.assign(Object.assign({}, this.context), { base: Action.PR_BRANCH_UPDATE_NAME, head: defaultBranch, sort: 'updated', direction: 'desc', state: 'open' }));
-            if (prs.data.length > 0) {
-                this.core.info('Found an existing pull request, continue with this one…');
-            }
+    async getTokenUser() {
+        let tokenUserName = 'github-actions[bot]';
+        try {
+            const user = await this.github.rest.users.getAuthenticated();
+            this.core.info(`Hello ${user.data.login}, nice to meet you 👋🏼`);
+            tokenUserName = user.data.login;
+        }
+        catch (error) {
+            this.core.info(`Unable to detect user, using default value ${tokenUserName}`);
+            this.core.info(String(error));
+        }
+        finally {
             this.core.endGroup();
-            if (prs.data.length > 0) {
-                return {
-                    number: prs.data[0].number,
-                    assignees: (_b = (_a = prs.data[0].assignees) === null || _a === void 0 ? void 0 : _a.map(a => a.login)) !== null && _b !== void 0 ? _b : []
-                };
-            }
-            return null;
-        });
+        }
+        return tokenUserName;
     }
-    repoIncludesCommit(sha) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const cache = this.commitCache.get(sha);
-            if (cache !== undefined) {
-                return cache;
-            }
-            try {
-                yield this.github.rest.git.getCommit(Object.assign(Object.assign({}, this.context), { commit_sha: sha }));
-                this.commitCache.set(sha, true);
-                return true;
-            }
-            catch (error) {
-                if (String(error).includes('Not Found')) {
-                    this.commitCache.set(sha, false);
-                    return false;
+    async getRepository() {
+        try {
+            const { data } = await this.github.rest.repos.get({
+                ...this.context
+            });
+            return {
+                name: data.name,
+                defaultBranch: data.default_branch,
+                cloneUrl: data.clone_url
+            };
+        }
+        catch (error) {
+            throw new Error(`Unable to find template: ${error}`);
+        }
+    }
+    async getTemplateAndBranch() {
+        const [owner, repo, branch] = this.context.template.split('/');
+        let template;
+        let defaultBranch;
+        try {
+            const { data } = await this.github.rest.repos.get({
+                owner,
+                repo
+            });
+            defaultBranch = data.default_branch;
+            template = {
+                name: data.name,
+                owner: data.owner.login,
+                url: data.html_url,
+                cloneUrl: data.clone_url
+            };
+        }
+        catch (error) {
+            throw new Error(`Unable to find template ${owner}/${repo}: ${error}`);
+        }
+        try {
+            const { data } = await this.github.rest.repos.getBranch({
+                owner,
+                repo,
+                branch: branch || defaultBranch || 'develop'
+            });
+            return {
+                template,
+                templateBranch: {
+                    name: data.name,
+                    sha: data.commit.sha
                 }
-                throw error;
-            }
+            };
+        }
+        catch (error) {
+            throw new Error(`Unable to find branch: ${error}`);
+        }
+    }
+    async findPullRequest(defaultBranch) {
+        this.core.startGroup('Check for existing PRs');
+        const prs = await this.botGithub.rest.pulls.list({
+            ...this.context,
+            base: Action.PR_BRANCH_UPDATE_NAME,
+            head: defaultBranch,
+            sort: 'updated',
+            direction: 'desc',
+            state: 'open'
         });
+        if (prs.data.length > 0) {
+            this.core.info('Found an existing pull request, continue with this one…');
+        }
+        this.core.endGroup();
+        if (prs.data.length > 0) {
+            return {
+                number: prs.data[0].number,
+                assignees: prs.data[0].assignees?.map(a => a.login) ?? []
+            };
+        }
+        return null;
+    }
+    async repoIncludesCommit(sha) {
+        const cache = this.commitCache.get(sha);
+        if (cache !== undefined) {
+            return cache;
+        }
+        try {
+            await this.github.rest.git.getCommit({
+                ...this.context,
+                commit_sha: sha
+            });
+            this.commitCache.set(sha, true);
+            return true;
+        }
+        catch (error) {
+            if (String(error).includes('Not Found')) {
+                this.commitCache.set(sha, false);
+                return false;
+            }
+            throw error;
+        }
     }
     addTokenToRepositoryUrl(url) {
         const urlObj = new external_url_.URL(url);
@@ -41635,61 +40764,64 @@ class Action {
         }
         return urlObj.toString();
     }
-    createUpdateBranch(repository_1, template_1, branch_1, username_1) {
-        return __awaiter(this, arguments, void 0, function* (repository, template, branch, username, push = true) {
-            this.core.startGroup('Create update branch for pull request');
-            const tmp = yield (0,promises_namespaceObject.mkdtemp)((0,external_path_.join)((0,external_os_.tmpdir)(), 'action-template-updater'));
-            try {
-                this.core.info(`Clone ${repository.cloneUrl}`);
-                yield this.git.clone(this.addTokenToRepositoryUrl(repository.cloneUrl), tmp);
-                this.git.cwd(tmp);
-                this.core.info('Set git user name and email');
-                yield this.git.addConfig('user.email', 'uyiebuogiacahdohhohd@e.sebbo.net');
-                yield this.git.addConfig('user.name', username);
-                this.core.info(`Add template remote (${template.cloneUrl})`);
-                yield this.git.addRemote('template', template.cloneUrl);
-                this.core.info('Fetch template');
-                yield this.git.fetch('template', branch.name);
-                this.core.info(`Checkout template branch as ${Action.PR_BRANCH_UPDATE_NAME}`);
-                yield this.git.checkout(['-f', '-b', Action.PR_BRANCH_UPDATE_NAME, '--track', 'template/' + branch.name]);
-                if (push) {
-                    this.core.info('Push template to repository');
-                    yield this.git.push('origin', Action.PR_BRANCH_UPDATE_NAME);
-                }
+    async createUpdateBranch(repository, template, branch, username, push = true) {
+        this.core.startGroup('Create update branch for pull request');
+        const tmp = await (0,promises_namespaceObject.mkdtemp)((0,external_path_.join)((0,external_os_.tmpdir)(), 'action-template-updater'));
+        try {
+            this.core.info(`Clone ${repository.cloneUrl}`);
+            await this.git.clone(this.addTokenToRepositoryUrl(repository.cloneUrl), tmp);
+            this.git.cwd(tmp);
+            this.core.info('Set git user name and email');
+            await this.git.addConfig('user.email', 'uyiebuogiacahdohhohd@e.sebbo.net');
+            await this.git.addConfig('user.name', username);
+            this.core.info(`Add template remote (${template.cloneUrl})`);
+            await this.git.addRemote('template', template.cloneUrl);
+            this.core.info('Fetch template');
+            await this.git.fetch('template', branch.name);
+            this.core.info(`Checkout template branch as ${Action.PR_BRANCH_UPDATE_NAME}`);
+            await this.git.checkout(['-f', '-b', Action.PR_BRANCH_UPDATE_NAME, '--track', 'template/' + branch.name]);
+            if (push) {
+                this.core.info('Push template to repository');
+                await this.git.push('origin', Action.PR_BRANCH_UPDATE_NAME);
             }
-            finally {
-                this.core.info('Remove local repository');
-                yield (0,promises_namespaceObject.rm)(tmp, { recursive: true });
-                this.core.endGroup();
-            }
-        });
+        }
+        finally {
+            this.core.info('Remove local repository');
+            await (0,promises_namespaceObject.rm)(tmp, { recursive: true });
+            this.core.endGroup();
+        }
     }
-    createOrUpdatePullRequest(pr, repository, template) {
-        return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b;
-            if (!pr) {
-                this.core.info('Create Pull Request');
-                const data = yield this.botGithub.rest.pulls.create(Object.assign(Object.assign({}, this.context), { head: Action.PR_BRANCH_UPDATE_NAME, base: repository.defaultBranch, title: '🔧 Update template', body: `This pull request merges the current state of [the template](${template.url}) used here into this project so that it is up to date.`, maintainer_can_modify: true }));
-                pr = {
-                    number: data.data.number,
-                    assignees: (_b = (_a = data.data.assignees) === null || _a === void 0 ? void 0 : _a.map(a => a.login)) !== null && _b !== void 0 ? _b : []
-                };
-            }
-            if (!pr) {
-                throw new Error('Unable to continue: Unable to create Pull Request.');
-            }
-            const pullRequest = pr;
-            const assigneesToAdd = this.context.assignees.filter(assignee => !pullRequest.assignees.includes(assignee));
-            if (assigneesToAdd.length) {
-                this.core.info('Assign these users to pull request: ' + assigneesToAdd.join(', '));
-                this.botGithub.rest.issues.addAssignees(Object.assign(Object.assign({}, this.context), { issue_number: pullRequest.number }));
-            }
-            return pullRequest;
-        });
+    async createOrUpdatePullRequest(pr, repository, template) {
+        if (!pr) {
+            this.core.info('Create Pull Request');
+            const data = await this.botGithub.rest.pulls.create({
+                ...this.context,
+                head: Action.PR_BRANCH_UPDATE_NAME,
+                base: repository.defaultBranch,
+                title: '🔧 Update template',
+                body: `This pull request merges the current state of [the template](${template.url}) used here into this project so that it is up to date.`,
+                maintainer_can_modify: true
+            });
+            pr = {
+                number: data.data.number,
+                assignees: data.data.assignees?.map(a => a.login) ?? []
+            };
+        }
+        if (!pr) {
+            throw new Error('Unable to continue: Unable to create Pull Request.');
+        }
+        const pullRequest = pr;
+        const assigneesToAdd = this.context.assignees.filter(assignee => !pullRequest.assignees.includes(assignee));
+        if (assigneesToAdd.length) {
+            this.core.info('Assign these users to pull request: ' + assigneesToAdd.join(', '));
+            this.botGithub.rest.issues.addAssignees({
+                ...this.context,
+                issue_number: pullRequest.number
+            });
+        }
+        return pullRequest;
     }
 }
-Action.PR_BRANCH_UPDATE_NAME = 'template-updater/update';
-/* harmony default export */ const lib = (Action);
 
 ;// CONCATENATED MODULE: ./src/index.ts
 
@@ -41707,8 +40839,8 @@ try {
             .map(u => u.trim())
             .filter(Boolean)
     };
-    const action = new lib(token, myContext, core, botToken);
-    action.run().catch(error => core.setFailed(error.message));
+    const action = new Action(token, myContext, core, botToken);
+    action.run().catch((error) => core.setFailed(String(error)));
 }
 catch (error) {
     if (error instanceof Error) {
