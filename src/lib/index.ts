@@ -1,6 +1,6 @@
 import { Octokit } from '@octokit/rest';
-import { CoreInterface } from './core-mock.js';
-import { simpleGit, SimpleGit } from 'simple-git';
+import { type CoreInterface } from './core-mock.js';
+import { simpleGit, type SimpleGit } from 'simple-git';
 import { mkdtemp, rm } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
