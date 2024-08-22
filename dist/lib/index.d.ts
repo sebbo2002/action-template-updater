@@ -1,4 +1,4 @@
-import { CoreInterface } from './core-mock.js';
+import { type CoreInterface } from './core-mock.js';
 export interface Context {
     owner: string;
     repo: string;
