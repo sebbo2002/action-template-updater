@@ -1,3 +1,17 @@
+# [4.0.0](https://github.com/sebbo2002/action-template-updater/compare/v3.0.4...v4.0.0) (2024-08-26)
+
+
+### chore
+
+* Drop support for node.js v19 and v21 ([2fff079](https://github.com/sebbo2002/action-template-updater/commit/2fff079040a377fbe9ecc340388f6a29b863cf80))
+
+
+### BREAKING CHANGES
+
+* Drop node.js v21 Support
+
+These node.js versions are no longer supported. For more information see https://nodejs.dev/en/about/releases/
+
 ## [3.0.4](https://github.com/sebbo2002/action-template-updater/compare/v3.0.3...v3.0.4) (2024-08-04)
 
 ## [3.0.3](https://github.com/sebbo2002/action-template-updater/compare/v3.0.2...v3.0.3) (2024-04-15)
