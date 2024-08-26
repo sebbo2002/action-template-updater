@@ -35735,7 +35735,7 @@ legacyRestEndpointMethods.VERSION = plugin_rest_endpoint_methods_dist_src_versio
 //# sourceMappingURL=index.js.map
 
 ;// CONCATENATED MODULE: ./node_modules/@octokit/rest/dist-src/version.js
-const rest_dist_src_version_VERSION = "21.0.1";
+const rest_dist_src_version_VERSION = "21.0.2";
 
 
 ;// CONCATENATED MODULE: ./node_modules/@octokit/rest/dist-src/index.js
@@ -35750,6 +35750,51 @@ const dist_src_Octokit = Octokit.plugin(requestLog, legacyRestEndpointMethods, p
   }
 );
 
+
+;// CONCATENATED MODULE: ./src/lib/core-mock.ts
+const buffer = [];
+let group;
+function add(message) {
+    if (group) {
+        group[2].push(message);
+    }
+    else {
+        buffer.push(message);
+    }
+}
+function resetBuffer() {
+    buffer.length = 0;
+}
+function getBuffer() {
+    return buffer;
+}
+const core_mock_core = {
+    info(message) {
+        add(['info', message]);
+    },
+    error(message) {
+        add(['error', message]);
+    },
+    warning(message) {
+        add(['warning', message]);
+    },
+    notice(message) {
+        add(['notice', message]);
+    },
+    startGroup(message) {
+        group = ['group', message, []];
+        buffer.push(group);
+    },
+    endGroup() {
+        if (group) {
+            group = undefined;
+        }
+    },
+    setOutput(key, value) {
+        const m = ['output', key, value];
+        buffer.push(m);
+    }
+};
 
 // EXTERNAL MODULE: ./node_modules/@kwsites/file-exists/dist/index.js
 var dist = __nccwpck_require__(4751);
@@ -40569,6 +40614,7 @@ var external_os_ = __nccwpck_require__(2037);
 // EXTERNAL MODULE: external "url"
 var external_url_ = __nccwpck_require__(7310);
 ;// CONCATENATED MODULE: ./src/lib/index.ts
+
 
 
 
