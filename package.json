@@ -11,7 +11,7 @@
   },
   "description": "Updates a fork of a template repository by creating pull requests for changes",
   "devDependencies": {
-    "@eslint/js": "^9.9.0",
+    "@eslint/js": "^9.9.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
@@ -20,7 +20,7 @@
     "@types/node": "^22.5.0",
     "@vercel/ncc": "^0.38.1",
     "c8": "^10.1.2",
-    "eslint": "^9.9.0",
+    "eslint": "^9.9.1",
     "eslint-plugin-jsonc": "^2.16.0",
     "esm": "^3.2.25",
     "license-checker": "^25.0.1",
@@ -29,7 +29,7 @@
     "semantic-release-license": "^1.0.3",
     "source-map-support": "^0.5.21",
     "tsup": "^8.1.0",
-    "tsx": "^4.17.0",
+    "tsx": "^4.19.0",
     "typedoc": "^0.26.6",
     "typescript": "^5.5.4",
     "typescript-eslint": "^8.2.0"
