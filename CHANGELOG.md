@@ -1,3 +1,10 @@
+## [4.0.2](https://github.com/sebbo2002/action-template-updater/compare/v4.0.1...v4.0.2) (2025-01-09)
+
+
+### Bug Fixes
+
+* **deps:** downgrade eslint to v9.13.0 to resolve typescript-eslint issue ([4607a3b](https://github.com/sebbo2002/action-template-updater/commit/4607a3b6018792f751d1d29281f3c23d09ff286a)), closes [#10353](https://github.com/sebbo2002/action-template-updater/issues/10353) [typescript-eslint/typescript-eslint#10353](https://github.com/typescript-eslint/typescript-eslint/issues/10353)
+
 ## [4.0.1](https://github.com/sebbo2002/action-template-updater/compare/v4.0.0...v4.0.1) (2024-10-16)
 
 # [4.0.0](https://github.com/sebbo2002/action-template-updater/compare/v3.0.4...v4.0.0) (2024-08-26)
