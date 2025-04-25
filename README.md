@@ -5,8 +5,8 @@
 Here would be a very short description of the project. So in this example it would be a short information that this is
 a template that I use to start new projects and services.
 
-
 ## 🚨 Template Usage Checklist
+
 - [ ] Update project name in `package.json`
 - [ ] Create `main` and `develop` branches
 - [ ] Set `develop` as default branch
@@ -17,7 +17,6 @@ a template that I use to start new projects and services.
         - Require `Release` status checks to pass before merging
         - Lock branch
 
-
 ## ⚡️ Quick Start
 
 ```
@@ -25,7 +24,6 @@ uses: sebbo2002/action-foo-bar
 with:
   token: ${{ secrets.GITHUB_TOKEN }}
 ```
-
 
 ## 🙆🏼‍♂️ Copyright and license
 

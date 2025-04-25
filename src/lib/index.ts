@@ -9,7 +9,7 @@ export default class Action {
     private readonly context: Context;
     private readonly core: CoreInterface;
 
-    constructor (token: string, context: Context, core: CoreInterface) {
+    constructor(token: string, context: Context, core: CoreInterface) {
         this.context = context;
         this.core = core;
     }

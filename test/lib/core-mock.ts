@@ -1,6 +1,7 @@
 'use strict';
 
 import assert from 'assert';
+
 import { core, getBuffer } from '../../src/lib/core-mock.js';
 
 describe('CoreMock', function () {
@@ -19,11 +20,9 @@ describe('CoreMock', function () {
         assert.deepStrictEqual(getBuffer(), [
             ['info', 'Info'],
             ['error', error],
-            ['group', 'Start group', [
-                ['warning', 'Warning']
-            ]],
+            ['group', 'Start group', [['warning', 'Warning']]],
             ['output', 'key', 'value'],
-            ['notice', 'Notice']
+            ['notice', 'Notice'],
         ]);
     });
 });
