@@ -1,22 +1,33 @@
 export type CoreInterface = {
-    info(message: string): void;
-    error(message: string | Error): void;
-    warning(message: string | Error): void;
-    notice(message: string): void;
-    startGroup(message: string): void;
     endGroup(): void;
+    error(message: Error | string): void;
+    info(message: string): void;
+    notice(message: string): void;
     setOutput(key: string, value: unknown): void;
-}
+    startGroup(message: string): void;
+    warning(message: Error | string): void;
+};
 
-export type CoreMockMessageString = ['info' | 'notice', string];
-export type CoreMockMessageError = ['error' | 'warning', string | Error];
-export type CoreMockMessageOutput = ['output', string, unknown];
-export type CoreMockMessage = CoreMockMessageString | CoreMockMessageError | CoreMockMessageOutput;
+export type CoreMockBufferItem = CoreMockGroup | CoreMockMessage;
 export type CoreMockGroup = ['group', string, CoreMockMessage[]];
-export type CoreMockBufferItem = CoreMockMessage | CoreMockGroup;
+export type CoreMockMessage =
+    | CoreMockMessageError
+    | CoreMockMessageOutput
+    | CoreMockMessageString;
+export type CoreMockMessageError = ['error' | 'warning', Error | string];
+export type CoreMockMessageOutput = ['output', string, unknown];
+export type CoreMockMessageString = ['info' | 'notice', string];
 
 const buffer: CoreMockBufferItem[] = [];
 let group: CoreMockGroup | undefined;
+
+export function getBuffer(): CoreMockBufferItem[] {
+    return buffer;
+}
+
+export function resetBuffer(): void {
+    buffer.length = 0;
+}
 
 function add(message: CoreMockMessage): void {
     if (group) {
@@ -26,44 +37,36 @@ function add(message: CoreMockMessage): void {
     }
 }
 
-export function resetBuffer(): void {
-    buffer.length = 0;
-}
-
-export function getBuffer(): CoreMockBufferItem[] {
-    return buffer;
-}
-
 export const core: CoreInterface = {
-    info(message: string) {
-        add(['info', message]);
+    endGroup() {
+        if (group) {
+            group = undefined;
+        }
     },
 
-    error(message: string | Error) {
+    error(message: Error | string) {
         add(['error', message]);
     },
 
-    warning(message: string | Error) {
-        add(['warning', message]);
+    info(message: string) {
+        add(['info', message]);
     },
 
     notice(message: string) {
         add(['notice', message]);
     },
 
-    startGroup (message: string) {
+    setOutput(key: string, value: unknown): void {
+        const m: CoreMockMessageOutput = ['output', key, value];
+        buffer.push(m);
+    },
+
+    startGroup(message: string) {
         group = ['group', message, []];
         buffer.push(group);
     },
 
-    endGroup () {
-        if (group) {
-            group = undefined;
-        }
+    warning(message: Error | string) {
+        add(['warning', message]);
     },
-
-    setOutput (key: string, value: unknown): void {
-        const m: CoreMockMessageOutput = ['output', key, value];
-        buffer.push(m);
-    }
 };

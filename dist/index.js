@@ -36900,6 +36900,12 @@ const dist_src_Octokit = Octokit.plugin(requestLog, legacyRestEndpointMethods, p
 ;// CONCATENATED MODULE: ./src/lib/core-mock.ts
 const buffer = [];
 let group;
+function getBuffer() {
+    return buffer;
+}
+function resetBuffer() {
+    buffer.length = 0;
+}
 function add(message) {
     if (group) {
         group[2].push(message);
@@ -36908,38 +36914,32 @@ function add(message) {
         buffer.push(message);
     }
 }
-function resetBuffer() {
-    buffer.length = 0;
-}
-function getBuffer() {
-    return buffer;
-}
 const core_mock_core = {
-    info(message) {
-        add(['info', message]);
-    },
-    error(message) {
-        add(['error', message]);
-    },
-    warning(message) {
-        add(['warning', message]);
-    },
-    notice(message) {
-        add(['notice', message]);
-    },
-    startGroup(message) {
-        group = ['group', message, []];
-        buffer.push(group);
-    },
     endGroup() {
         if (group) {
             group = undefined;
         }
     },
+    error(message) {
+        add(['error', message]);
+    },
+    info(message) {
+        add(['info', message]);
+    },
+    notice(message) {
+        add(['notice', message]);
+    },
     setOutput(key, value) {
         const m = ['output', key, value];
         buffer.push(m);
-    }
+    },
+    startGroup(message) {
+        group = ['group', message, []];
+        buffer.push(group);
+    },
+    warning(message) {
+        add(['warning', message]);
+    },
 };
 
 // EXTERNAL MODULE: ./node_modules/@kwsites/file-exists/dist/index.js
