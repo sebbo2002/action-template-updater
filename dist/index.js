@@ -36897,51 +36897,12 @@ const dist_src_Octokit = Octokit.plugin(requestLog, legacyRestEndpointMethods, p
 );
 
 
-;// CONCATENATED MODULE: ./src/lib/core-mock.ts
-const buffer = [];
-let group;
-function getBuffer() {
-    return buffer;
-}
-function resetBuffer() {
-    buffer.length = 0;
-}
-function add(message) {
-    if (group) {
-        group[2].push(message);
-    }
-    else {
-        buffer.push(message);
-    }
-}
-const core_mock_core = {
-    endGroup() {
-        if (group) {
-            group = undefined;
-        }
-    },
-    error(message) {
-        add(['error', message]);
-    },
-    info(message) {
-        add(['info', message]);
-    },
-    notice(message) {
-        add(['notice', message]);
-    },
-    setOutput(key, value) {
-        const m = ['output', key, value];
-        buffer.push(m);
-    },
-    startGroup(message) {
-        group = ['group', message, []];
-        buffer.push(group);
-    },
-    warning(message) {
-        add(['warning', message]);
-    },
-};
-
+;// CONCATENATED MODULE: external "fs/promises"
+const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("fs/promises");
+// EXTERNAL MODULE: external "os"
+var external_os_ = __nccwpck_require__(857);
+// EXTERNAL MODULE: external "path"
+var external_path_ = __nccwpck_require__(6928);
 // EXTERNAL MODULE: ./node_modules/@kwsites/file-exists/dist/index.js
 var dist = __nccwpck_require__(7117);
 // EXTERNAL MODULE: ./node_modules/debug/src/index.js
@@ -41750,14 +41711,53 @@ var esm_default = (/* unused pure expression or super */ null && (gitInstanceFac
 
 //# sourceMappingURL=index.js.map
 
-;// CONCATENATED MODULE: external "fs/promises"
-const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("fs/promises");
-// EXTERNAL MODULE: external "path"
-var external_path_ = __nccwpck_require__(6928);
-// EXTERNAL MODULE: external "os"
-var external_os_ = __nccwpck_require__(857);
 // EXTERNAL MODULE: external "url"
 var external_url_ = __nccwpck_require__(7016);
+;// CONCATENATED MODULE: ./src/lib/core-mock.ts
+const buffer = [];
+let group;
+function getBuffer() {
+    return buffer;
+}
+function resetBuffer() {
+    buffer.length = 0;
+}
+function add(message) {
+    if (group) {
+        group[2].push(message);
+    }
+    else {
+        buffer.push(message);
+    }
+}
+const core_mock_core = {
+    endGroup() {
+        if (group) {
+            group = undefined;
+        }
+    },
+    error(message) {
+        add(['error', message]);
+    },
+    info(message) {
+        add(['info', message]);
+    },
+    notice(message) {
+        add(['notice', message]);
+    },
+    setOutput(key, value) {
+        const m = ['output', key, value];
+        buffer.push(m);
+    },
+    startGroup(message) {
+        group = ['group', message, []];
+        buffer.push(group);
+    },
+    warning(message) {
+        add(['warning', message]);
+    },
+};
+
 ;// CONCATENATED MODULE: ./src/lib/index.ts
 
 
@@ -41767,35 +41767,35 @@ var external_url_ = __nccwpck_require__(7016);
 
 
 class Action {
-    github;
-    botGithub;
-    git;
-    context;
-    token;
-    botToken;
-    core;
-    commitCache = new Map();
     static PR_BRANCH_UPDATE_NAME = 'template-updater/update';
+    botGithub;
+    botToken;
+    commitCache = new Map();
+    context;
+    core;
+    git;
+    github;
+    token;
     constructor(token, context, core, botToken = token) {
         this.github = new dist_src_Octokit({
             auth: token,
-            userAgent: '@sebbo2002/action-template-updater',
             log: {
                 debug: () => ({}),
+                error: (message) => core.error(message),
                 info: () => ({}),
-                warn: message => core.warning(message),
-                error: message => core.error(message)
+                warn: (message) => core.warning(message),
             },
+            userAgent: '@sebbo2002/action-template-updater',
         });
         this.botGithub = new dist_src_Octokit({
             auth: botToken,
-            userAgent: '@sebbo2002/action-template-updater',
             log: {
                 debug: () => ({}),
+                error: (message) => core.error(message),
                 info: () => ({}),
-                warn: message => core.warning(message),
-                error: message => core.error(message)
+                warn: (message) => core.warning(message),
             },
+            userAgent: '@sebbo2002/action-template-updater',
         });
         this.git = simpleGit();
         this.token = token;
@@ -41803,11 +41803,178 @@ class Action {
         this.context = context;
         this.core = core;
     }
+    addTokenToRepositoryUrl(url) {
+        const urlObj = new external_url_.URL(url);
+        if (process.env.GITHUB_ACTOR) {
+            urlObj.username = process.env.GITHUB_ACTOR;
+            urlObj.password = this.token;
+        }
+        else {
+            urlObj.username = this.token;
+        }
+        return urlObj.toString();
+    }
+    async createOrUpdatePullRequest(pr, repository, template) {
+        if (!pr) {
+            this.core.info('Create Pull Request');
+            const data = await this.botGithub.rest.pulls.create({
+                ...this.context,
+                base: repository.defaultBranch,
+                body: `This pull request merges the current state of [the template](${template.url}) used here into this project so that it is up to date.`,
+                head: Action.PR_BRANCH_UPDATE_NAME,
+                maintainer_can_modify: true,
+                title: '🔧 Update template',
+            });
+            pr = {
+                assignees: data.data.assignees?.map((a) => a.login) ?? [],
+                number: data.data.number,
+            };
+        }
+        if (!pr) {
+            throw new Error('Unable to continue: Unable to create Pull Request.');
+        }
+        const pullRequest = pr;
+        const assigneesToAdd = this.context.assignees.filter((assignee) => !pullRequest.assignees.includes(assignee));
+        if (assigneesToAdd.length) {
+            this.core.info('Assign these users to pull request: ' +
+                assigneesToAdd.join(', '));
+            this.botGithub.rest.issues.addAssignees({
+                ...this.context,
+                issue_number: pullRequest.number,
+            });
+        }
+        return pullRequest;
+    }
+    async createUpdateBranch(repository, template, branch, username, push = true) {
+        this.core.startGroup('Create update branch for pull request');
+        const tmp = await (0,promises_namespaceObject.mkdtemp)((0,external_path_.join)((0,external_os_.tmpdir)(), 'action-template-updater'));
+        try {
+            this.core.info(`Clone ${repository.cloneUrl}`);
+            await this.git.clone(this.addTokenToRepositoryUrl(repository.cloneUrl), tmp);
+            this.git.cwd(tmp);
+            this.core.info('Set git user name and email');
+            await this.git.addConfig('user.email', 'uyiebuogiacahdohhohd@e.sebbo.net');
+            await this.git.addConfig('user.name', username);
+            this.core.info(`Add template remote (${template.cloneUrl})`);
+            await this.git.addRemote('template', template.cloneUrl);
+            this.core.info('Fetch template');
+            await this.git.fetch('template', branch.name);
+            this.core.info(`Checkout template branch as ${Action.PR_BRANCH_UPDATE_NAME}`);
+            await this.git.checkout([
+                '-f',
+                '-b',
+                Action.PR_BRANCH_UPDATE_NAME,
+                '--track',
+                'template/' + branch.name,
+            ]);
+            if (push) {
+                this.core.info('Push template to repository');
+                await this.git.push('origin', Action.PR_BRANCH_UPDATE_NAME);
+            }
+        }
+        finally {
+            this.core.info('Remove local repository');
+            await (0,promises_namespaceObject.rm)(tmp, { recursive: true });
+            this.core.endGroup();
+        }
+    }
+    async findPullRequest(defaultBranch) {
+        this.core.startGroup('Check for existing PRs');
+        const prs = await this.botGithub.rest.pulls.list({
+            ...this.context,
+            base: Action.PR_BRANCH_UPDATE_NAME,
+            direction: 'desc',
+            head: defaultBranch,
+            sort: 'updated',
+            state: 'open',
+        });
+        if (prs.data.length > 0) {
+            this.core.info('Found an existing pull request, continue with this one…');
+        }
+        this.core.endGroup();
+        if (prs.data.length > 0) {
+            return {
+                assignees: prs.data[0].assignees?.map((a) => a.login) ?? [],
+                number: prs.data[0].number,
+            };
+        }
+        return null;
+    }
+    async getRepository() {
+        try {
+            const { data } = await this.github.rest.repos.get({
+                ...this.context,
+            });
+            return {
+                cloneUrl: data.clone_url,
+                defaultBranch: data.default_branch,
+                name: data.name,
+            };
+        }
+        catch (error) {
+            throw new Error(`Unable to find template: ${error}`);
+        }
+    }
+    async getTemplateAndBranch() {
+        const [owner, repo, branch] = this.context.template.split('/');
+        let template;
+        let defaultBranch;
+        try {
+            const { data } = await this.github.rest.repos.get({
+                owner,
+                repo,
+            });
+            defaultBranch = data.default_branch;
+            template = {
+                cloneUrl: data.clone_url,
+                name: data.name,
+                owner: data.owner.login,
+                url: data.html_url,
+            };
+        }
+        catch (error) {
+            throw new Error(`Unable to find template ${owner}/${repo}: ${error}`);
+        }
+        try {
+            const { data } = await this.github.rest.repos.getBranch({
+                branch: branch || defaultBranch || 'develop',
+                owner,
+                repo,
+            });
+            return {
+                template,
+                templateBranch: {
+                    name: data.name,
+                    sha: data.commit.sha,
+                },
+            };
+        }
+        catch (error) {
+            throw new Error(`Unable to find branch: ${error}`);
+        }
+    }
+    async getTokenUser() {
+        let tokenUserName = 'github-actions[bot]';
+        try {
+            const user = await this.github.rest.users.getAuthenticated();
+            this.core.info(`Hello ${user.data.login}, nice to meet you 👋🏼`);
+            tokenUserName = user.data.login;
+        }
+        catch (error) {
+            this.core.info(`Unable to detect user, using default value ${tokenUserName}`);
+            this.core.info(String(error));
+        }
+        finally {
+            this.core.endGroup();
+        }
+        return tokenUserName;
+    }
     async run() {
         const tokenUserName = await this.getTokenUser();
         const repository = await this.getRepository();
         const { template, templateBranch } = await this.getTemplateAndBranch();
-        if (this.context.owner == template.owner && this.context.repo === template.name) {
+        if (this.context.owner == template.owner &&
+            this.context.repo === template.name) {
             this.core.notice('Repository and template are the same, stop here…');
             return;
         }
@@ -41832,97 +41999,6 @@ class Action {
             this.core.notice(`Pull Request #${pr.number} is up to date`);
         }
     }
-    async getTokenUser() {
-        let tokenUserName = 'github-actions[bot]';
-        try {
-            const user = await this.github.rest.users.getAuthenticated();
-            this.core.info(`Hello ${user.data.login}, nice to meet you 👋🏼`);
-            tokenUserName = user.data.login;
-        }
-        catch (error) {
-            this.core.info(`Unable to detect user, using default value ${tokenUserName}`);
-            this.core.info(String(error));
-        }
-        finally {
-            this.core.endGroup();
-        }
-        return tokenUserName;
-    }
-    async getRepository() {
-        try {
-            const { data } = await this.github.rest.repos.get({
-                ...this.context
-            });
-            return {
-                name: data.name,
-                defaultBranch: data.default_branch,
-                cloneUrl: data.clone_url
-            };
-        }
-        catch (error) {
-            throw new Error(`Unable to find template: ${error}`);
-        }
-    }
-    async getTemplateAndBranch() {
-        const [owner, repo, branch] = this.context.template.split('/');
-        let template;
-        let defaultBranch;
-        try {
-            const { data } = await this.github.rest.repos.get({
-                owner,
-                repo
-            });
-            defaultBranch = data.default_branch;
-            template = {
-                name: data.name,
-                owner: data.owner.login,
-                url: data.html_url,
-                cloneUrl: data.clone_url
-            };
-        }
-        catch (error) {
-            throw new Error(`Unable to find template ${owner}/${repo}: ${error}`);
-        }
-        try {
-            const { data } = await this.github.rest.repos.getBranch({
-                owner,
-                repo,
-                branch: branch || defaultBranch || 'develop'
-            });
-            return {
-                template,
-                templateBranch: {
-                    name: data.name,
-                    sha: data.commit.sha
-                }
-            };
-        }
-        catch (error) {
-            throw new Error(`Unable to find branch: ${error}`);
-        }
-    }
-    async findPullRequest(defaultBranch) {
-        this.core.startGroup('Check for existing PRs');
-        const prs = await this.botGithub.rest.pulls.list({
-            ...this.context,
-            base: Action.PR_BRANCH_UPDATE_NAME,
-            head: defaultBranch,
-            sort: 'updated',
-            direction: 'desc',
-            state: 'open'
-        });
-        if (prs.data.length > 0) {
-            this.core.info('Found an existing pull request, continue with this one…');
-        }
-        this.core.endGroup();
-        if (prs.data.length > 0) {
-            return {
-                number: prs.data[0].number,
-                assignees: prs.data[0].assignees?.map(a => a.login) ?? []
-            };
-        }
-        return null;
-    }
     async repoIncludesCommit(sha) {
         const cache = this.commitCache.get(sha);
         if (cache !== undefined) {
@@ -41931,7 +42007,7 @@ class Action {
         try {
             await this.github.rest.git.getCommit({
                 ...this.context,
-                commit_sha: sha
+                commit_sha: sha,
             });
             this.commitCache.set(sha, true);
             return true;
@@ -41944,74 +42020,6 @@ class Action {
             throw error;
         }
     }
-    addTokenToRepositoryUrl(url) {
-        const urlObj = new external_url_.URL(url);
-        if (process.env.GITHUB_ACTOR) {
-            urlObj.username = process.env.GITHUB_ACTOR;
-            urlObj.password = this.token;
-        }
-        else {
-            urlObj.username = this.token;
-        }
-        return urlObj.toString();
-    }
-    async createUpdateBranch(repository, template, branch, username, push = true) {
-        this.core.startGroup('Create update branch for pull request');
-        const tmp = await (0,promises_namespaceObject.mkdtemp)((0,external_path_.join)((0,external_os_.tmpdir)(), 'action-template-updater'));
-        try {
-            this.core.info(`Clone ${repository.cloneUrl}`);
-            await this.git.clone(this.addTokenToRepositoryUrl(repository.cloneUrl), tmp);
-            this.git.cwd(tmp);
-            this.core.info('Set git user name and email');
-            await this.git.addConfig('user.email', 'uyiebuogiacahdohhohd@e.sebbo.net');
-            await this.git.addConfig('user.name', username);
-            this.core.info(`Add template remote (${template.cloneUrl})`);
-            await this.git.addRemote('template', template.cloneUrl);
-            this.core.info('Fetch template');
-            await this.git.fetch('template', branch.name);
-            this.core.info(`Checkout template branch as ${Action.PR_BRANCH_UPDATE_NAME}`);
-            await this.git.checkout(['-f', '-b', Action.PR_BRANCH_UPDATE_NAME, '--track', 'template/' + branch.name]);
-            if (push) {
-                this.core.info('Push template to repository');
-                await this.git.push('origin', Action.PR_BRANCH_UPDATE_NAME);
-            }
-        }
-        finally {
-            this.core.info('Remove local repository');
-            await (0,promises_namespaceObject.rm)(tmp, { recursive: true });
-            this.core.endGroup();
-        }
-    }
-    async createOrUpdatePullRequest(pr, repository, template) {
-        if (!pr) {
-            this.core.info('Create Pull Request');
-            const data = await this.botGithub.rest.pulls.create({
-                ...this.context,
-                head: Action.PR_BRANCH_UPDATE_NAME,
-                base: repository.defaultBranch,
-                title: '🔧 Update template',
-                body: `This pull request merges the current state of [the template](${template.url}) used here into this project so that it is up to date.`,
-                maintainer_can_modify: true
-            });
-            pr = {
-                number: data.data.number,
-                assignees: data.data.assignees?.map(a => a.login) ?? []
-            };
-        }
-        if (!pr) {
-            throw new Error('Unable to continue: Unable to create Pull Request.');
-        }
-        const pullRequest = pr;
-        const assigneesToAdd = this.context.assignees.filter(assignee => !pullRequest.assignees.includes(assignee));
-        if (assigneesToAdd.length) {
-            this.core.info('Assign these users to pull request: ' + assigneesToAdd.join(', '));
-            this.botGithub.rest.issues.addAssignees({
-                ...this.context,
-                issue_number: pullRequest.number
-            });
-        }
-        return pullRequest;
-    }
 }
 
 ;// CONCATENATED MODULE: ./src/index.ts
@@ -42022,13 +42030,13 @@ try {
     const token = core.getInput('token');
     const botToken = core.getInput('bot-token') || token;
     const myContext = {
+        assignees: core.getInput('assignees')
+            .split(',')
+            .map((u) => u.trim())
+            .filter(Boolean),
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         template: core.getInput('template'),
-        assignees: core.getInput('assignees')
-            .split(',')
-            .map(u => u.trim())
-            .filter(Boolean)
     };
     const action = new Action(token, myContext, core, botToken);
     action.run().catch((error) => core.setFailed(String(error)));
