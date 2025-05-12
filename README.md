@@ -5,7 +5,6 @@
 Updates a fork of a template repository by creating pull requests for changes.
 Used in my [JavaScript Template](https://github.com/sebbo2002/js-template).
 
-
 ## ⚡️ Quick Start
 
 ```
@@ -22,7 +21,6 @@ with:
 ```
 npm run updater -- sebbo2002/js-template/typescript sebbo2002/my-repository-to-update
 ```
-
 
 ## 🙆🏼‍♂️ Copyright and license
 
