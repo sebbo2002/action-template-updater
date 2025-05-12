@@ -1,3 +1,15 @@
+# [5.0.0](https://github.com/sebbo2002/action-template-updater/compare/v4.0.3...v5.0.0) (2025-05-12)
+
+### chore
+
+- Drop node v18 support ([3e18405](https://github.com/sebbo2002/action-template-updater/commit/3e18405ac1e1be738a414623f97169c802567f99))
+
+### BREAKING CHANGES
+
+- Drop node.js v18 Support
+
+This node.js version is no longer supported. For more information see https://nodejs.dev/en/about/releases/
+
 ## [4.0.3](https://github.com/sebbo2002/action-template-updater/compare/v4.0.2...v4.0.3) (2025-03-09)
 
 ## [4.0.2](https://github.com/sebbo2002/action-template-updater/compare/v4.0.1...v4.0.2) (2025-01-09)
