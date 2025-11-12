@@ -76,7 +76,6 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
-      id-token: write
     needs:
       - coverage
       - tests
@@ -98,7 +97,7 @@ jobs:
         run: BRANCH=${GITHUB_REF#refs/heads/} npx semantic-release
         env:
           GH_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_OWNER: ${{ github.repository_owner }}
       - name: 🔃 Merge main back into develop
         if: ${{ github.ref == 'refs/heads/main' }}
