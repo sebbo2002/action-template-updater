@@ -29,7 +29,7 @@ jobs:
       - name: ⏳ Run tests
         run: npm run test
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   coverage:
     name: Code Coverage / Lint
@@ -50,7 +50,7 @@ jobs:
       - name: ⚙️ Build project
         run: npm run build-all
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   license-checker:
     name: License Checker
