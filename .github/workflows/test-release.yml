@@ -18,7 +18,7 @@ jobs:
         node: [20.x, 22.x, 23.x, current]
     steps:
       - name: ☁️ Checkout Project
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: 🔧 Setup node.js
         uses: actions/setup-node@v6
         with:
@@ -29,7 +29,7 @@ jobs:
       - name: ⏳ Run tests
         run: npm run test
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   coverage:
     name: Code Coverage / Lint
@@ -37,7 +37,7 @@ jobs:
     if: github.repository != 'sebbo2002/js-template' && (contains(toJson(github.event.commits.*.message), '[skip ci]') == false || github.ref == 'refs/heads/main')
     steps:
       - name: ☁️ Checkout Project
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: 🔧 Setup node.js
         uses: actions/setup-node@v6
         with:
@@ -50,7 +50,7 @@ jobs:
       - name: ⚙️ Build project
         run: npm run build-all
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   license-checker:
     name: License Checker
@@ -58,7 +58,7 @@ jobs:
     if: contains(toJson(github.event.commits.*.message), '[skip ci]') == false || github.ref == 'refs/heads/main'
     steps:
       - name: ☁️ Checkout Project
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: 🔧 Setup node.js
         uses: actions/setup-node@v6
         with:
@@ -76,7 +76,6 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
-      id-token: write
     needs:
       - coverage
       - tests
@@ -84,7 +83,7 @@ jobs:
     if: ${{ github.repository != 'sebbo2002/js-template' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
     steps:
       - name: ☁️ Checkout Project
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: 🔧 Setup node.js
         uses: actions/setup-node@v6
         with:
@@ -98,13 +97,13 @@ jobs:
         run: BRANCH=${GITHUB_REF#refs/heads/} npx semantic-release
         env:
           GH_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_OWNER: ${{ github.repository_owner }}
       - name: 🔃 Merge main back into develop
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: everlytic/branch-merge@1.1.5
         with:
-          github_token: ${{ secrets.GH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           source_ref: 'main'
           target_branch: 'develop'
           commit_message_template: 'Merge branch {source_ref} into {target_branch} [skip ci]'
