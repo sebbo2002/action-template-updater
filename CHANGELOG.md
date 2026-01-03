@@ -1,3 +1,5 @@
+## [5.0.4](https://github.com/sebbo2002/action-template-updater/compare/v5.0.3...v5.0.4) (2026-01-03)
+
 ## [5.0.3](https://github.com/sebbo2002/action-template-updater/compare/v5.0.2...v5.0.3) (2025-12-07)
 
 ## [5.0.2](https://github.com/sebbo2002/action-template-updater/compare/v5.0.1...v5.0.2) (2025-11-06)
