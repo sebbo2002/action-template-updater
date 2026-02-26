@@ -237,8 +237,8 @@ export default class Action {
                 defaultBranch: data.default_branch,
                 name: data.name,
             };
-        } catch (error) {
-            throw new Error(`Unable to find template: ${error}`);
+        } catch (cause) {
+            throw new Error(`Unable to find template: ${cause}`, { cause });
         }
     }
 
@@ -263,9 +263,10 @@ export default class Action {
                 owner: data.owner.login,
                 url: data.html_url,
             };
-        } catch (error) {
+        } catch (cause) {
             throw new Error(
-                `Unable to find template ${owner}/${repo}: ${error}`,
+                `Unable to find template ${owner}/${repo}: ${cause}`,
+                { cause },
             );
         }
 
@@ -282,8 +283,8 @@ export default class Action {
                     sha: data.commit.sha,
                 },
             };
-        } catch (error) {
-            throw new Error(`Unable to find branch: ${error}`);
+        } catch (cause) {
+            throw new Error(`Unable to find branch: ${cause}`, { cause });
         }
     }
 
