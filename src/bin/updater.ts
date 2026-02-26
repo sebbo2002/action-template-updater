@@ -8,7 +8,7 @@ if (!token) {
 
 const args = process.argv.filter((s) => s.substring(0, 1) !== '/');
 let group: string | undefined;
-let context: Context | null = null;
+let context: Context | undefined;
 
 if (
     args.length === 2 &&
