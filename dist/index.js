@@ -5101,6 +5101,24 @@ class SecureProxyConnectionError extends UndiciError {
   [kSecureProxyConnectionError] = true
 }
 
+const kMessageSizeExceededError = Symbol.for('undici.error.UND_ERR_WS_MESSAGE_SIZE_EXCEEDED')
+class MessageSizeExceededError extends UndiciError {
+  constructor (message) {
+    super(message)
+    this.name = 'MessageSizeExceededError'
+    this.message = message || 'Max decompressed message size exceeded'
+    this.code = 'UND_ERR_WS_MESSAGE_SIZE_EXCEEDED'
+  }
+
+  static [Symbol.hasInstance] (instance) {
+    return instance && instance[kMessageSizeExceededError] === true
+  }
+
+  get [kMessageSizeExceededError] () {
+    return true
+  }
+}
+
 module.exports = {
   AbortError,
   HTTPParserError,
@@ -5124,7 +5142,8 @@ module.exports = {
   ResponseExceededMaxSizeError,
   RequestRetryError,
   ResponseError,
-  SecureProxyConnectionError
+  SecureProxyConnectionError,
+  MessageSizeExceededError
 }
 
 
@@ -5199,6 +5218,10 @@ class Request {
 
     if (upgrade && typeof upgrade !== 'string') {
       throw new InvalidArgumentError('upgrade must be a string')
+    }
+
+    if (upgrade && !isValidHeaderValue(upgrade)) {
+      throw new InvalidArgumentError('invalid upgrade header')
     }
 
     if (headersTimeout != null && (!Number.isFinite(headersTimeout) || headersTimeout < 0)) {
@@ -5495,13 +5518,19 @@ function processHeader (request, key, val) {
     val = `${val}`
   }
 
-  if (request.host === null && headerName === 'host') {
+  if (headerName === 'host') {
+    if (request.host !== null) {
+      throw new InvalidArgumentError('duplicate host header')
+    }
     if (typeof val !== 'string') {
       throw new InvalidArgumentError('invalid host header')
     }
     // Consumed by Client
     request.host = val
-  } else if (request.contentLength === null && headerName === 'content-length') {
+  } else if (headerName === 'content-length') {
+    if (request.contentLength !== null) {
+      throw new InvalidArgumentError('duplicate content-length header')
+    }
     request.contentLength = parseInt(val, 10)
     if (!Number.isFinite(request.contentLength)) {
       throw new InvalidArgumentError('invalid content-length header')
@@ -28218,10 +28247,14 @@ module.exports = {
 
 const { createInflateRaw, Z_DEFAULT_WINDOWBITS } = __nccwpck_require__(8522)
 const { isValidClientWindowBits } = __nccwpck_require__(8625)
+const { MessageSizeExceededError } = __nccwpck_require__(8707)
 
 const tail = Buffer.from([0x00, 0x00, 0xff, 0xff])
 const kBuffer = Symbol('kBuffer')
 const kLength = Symbol('kLength')
+
+// Default maximum decompressed message size: 4 MB
+const kDefaultMaxDecompressedSize = 4 * 1024 * 1024
 
 class PerMessageDeflate {
   /** @type {import('node:zlib').InflateRaw} */
@@ -28229,9 +28262,23 @@ class PerMessageDeflate {
 
   #options = {}
 
-  constructor (extensions) {
+  /** @type {number} */
+  #maxDecompressedSize
+
+  /** @type {boolean} */
+  #aborted = false
+
+  /** @type {Function|null} */
+  #currentCallback = null
+
+  /**
+   * @param {Map<string, string>} extensions
+   * @param {{ maxDecompressedMessageSize?: number }} [options]
+   */
+  constructor (extensions, options = {}) {
     this.#options.serverNoContextTakeover = extensions.has('server_no_context_takeover')
     this.#options.serverMaxWindowBits = extensions.get('server_max_window_bits')
+    this.#maxDecompressedSize = options.maxDecompressedMessageSize ?? kDefaultMaxDecompressedSize
   }
 
   decompress (chunk, fin, callback) {
@@ -28239,6 +28286,11 @@ class PerMessageDeflate {
     // 1.  Append 4 octets of 0x00 0x00 0xff 0xff to the tail end of the
     //     payload of the message.
     // 2.  Decompress the resulting data using DEFLATE.
+
+    if (this.#aborted) {
+      callback(new MessageSizeExceededError())
+      return
+    }
 
     if (!this.#inflate) {
       let windowBits = Z_DEFAULT_WINDOWBITS
@@ -28252,13 +28304,37 @@ class PerMessageDeflate {
         windowBits = Number.parseInt(this.#options.serverMaxWindowBits)
       }
 
-      this.#inflate = createInflateRaw({ windowBits })
+      try {
+        this.#inflate = createInflateRaw({ windowBits })
+      } catch (err) {
+        callback(err)
+        return
+      }
       this.#inflate[kBuffer] = []
       this.#inflate[kLength] = 0
 
       this.#inflate.on('data', (data) => {
-        this.#inflate[kBuffer].push(data)
+        if (this.#aborted) {
+          return
+        }
+
         this.#inflate[kLength] += data.length
+
+        if (this.#inflate[kLength] > this.#maxDecompressedSize) {
+          this.#aborted = true
+          this.#inflate.removeAllListeners()
+          this.#inflate.destroy()
+          this.#inflate = null
+
+          if (this.#currentCallback) {
+            const cb = this.#currentCallback
+            this.#currentCallback = null
+            cb(new MessageSizeExceededError())
+          }
+          return
+        }
+
+        this.#inflate[kBuffer].push(data)
       })
 
       this.#inflate.on('error', (err) => {
@@ -28267,16 +28343,22 @@ class PerMessageDeflate {
       })
     }
 
+    this.#currentCallback = callback
     this.#inflate.write(chunk)
     if (fin) {
       this.#inflate.write(tail)
     }
 
     this.#inflate.flush(() => {
+      if (this.#aborted || !this.#inflate) {
+        return
+      }
+
       const full = Buffer.concat(this.#inflate[kBuffer], this.#inflate[kLength])
 
       this.#inflate[kBuffer].length = 0
       this.#inflate[kLength] = 0
+      this.#currentCallback = null
 
       callback(null, full)
     })
@@ -28330,14 +28412,23 @@ class ByteParser extends Writable {
   /** @type {Map<string, PerMessageDeflate>} */
   #extensions
 
-  constructor (ws, extensions) {
+  /** @type {{ maxDecompressedMessageSize?: number }} */
+  #options
+
+  /**
+   * @param {import('./websocket').WebSocket} ws
+   * @param {Map<string, string>|null} extensions
+   * @param {{ maxDecompressedMessageSize?: number }} [options]
+   */
+  constructor (ws, extensions, options = {}) {
     super()
 
     this.ws = ws
     this.#extensions = extensions == null ? new Map() : extensions
+    this.#options = options
 
     if (this.#extensions.has('permessage-deflate')) {
-      this.#extensions.set('permessage-deflate', new PerMessageDeflate(extensions))
+      this.#extensions.set('permessage-deflate', new PerMessageDeflate(extensions, options))
     }
   }
 
@@ -28472,6 +28563,7 @@ class ByteParser extends Writable {
 
         const buffer = this.consume(8)
         const upper = buffer.readUInt32BE(0)
+        const lower = buffer.readUInt32BE(4)
 
         // 2^31 is the maximum bytes an arraybuffer can contain
         // on 32-bit systems. Although, on 64-bit systems, this is
@@ -28479,14 +28571,12 @@ class ByteParser extends Writable {
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Invalid_array_length
         // https://source.chromium.org/chromium/chromium/src/+/main:v8/src/common/globals.h;drc=1946212ac0100668f14eb9e2843bdd846e510a1e;bpv=1;bpt=1;l=1275
         // https://source.chromium.org/chromium/chromium/src/+/main:v8/src/objects/js-array-buffer.h;l=34;drc=1946212ac0100668f14eb9e2843bdd846e510a1e
-        if (upper > 2 ** 31 - 1) {
+        if (upper !== 0 || lower > 2 ** 31 - 1) {
           failWebsocketConnection(this.ws, 'Received payload length > 2^31 bytes.')
           return
         }
 
-        const lower = buffer.readUInt32BE(4)
-
-        this.#info.payloadLength = (upper << 8) + lower
+        this.#info.payloadLength = lower
         this.#state = parserStates.READ_DATA
       } else if (this.#state === parserStates.READ_DATA) {
         if (this.#byteOffset < this.#info.payloadLength) {
@@ -28516,7 +28606,7 @@ class ByteParser extends Writable {
           } else {
             this.#extensions.get('permessage-deflate').decompress(body, this.#info.fin, (error, data) => {
               if (error) {
-                closeWebSocketConnection(this.ws, 1007, error.message, error.message.length)
+                failWebsocketConnection(this.ws, error.message)
                 return
               }
 
@@ -29120,6 +29210,12 @@ function parseExtensions (extensions) {
  * @param {string} value
  */
 function isValidClientWindowBits (value) {
+  // Must have at least one character
+  if (value.length === 0) {
+    return false
+  }
+
+  // Check all characters are ASCII digits
   for (let i = 0; i < value.length; i++) {
     const byte = value.charCodeAt(i)
 
@@ -29128,7 +29224,9 @@ function isValidClientWindowBits (value) {
     }
   }
 
-  return true
+  // Check numeric range: zlib requires windowBits in range 8-15
+  const num = Number.parseInt(value, 10)
+  return num >= 8 && num <= 15
 }
 
 // https://nodejs.org/api/intl.html#detecting-internationalization-support
@@ -29219,6 +29317,9 @@ class WebSocket extends EventTarget {
   /** @type {SendQueue} */
   #sendQueue
 
+  /** @type {{ maxDecompressedMessageSize?: number }} */
+  #options
+
   /**
    * @param {string} url
    * @param {string|string[]} protocols
@@ -29291,6 +29392,11 @@ class WebSocket extends EventTarget {
 
     // 10. Set this's url to urlRecord.
     this[kWebSocketURL] = new URL(urlRecord.href)
+
+    // Store options for later use (e.g., maxDecompressedMessageSize)
+    this.#options = {
+      maxDecompressedMessageSize: options.maxDecompressedMessageSize
+    }
 
     // 11. Let client be this's relevant settings object.
     const client = environmentSettingsObject.settingsObject
@@ -29606,11 +29712,11 @@ class WebSocket extends EventTarget {
    * @see https://websockets.spec.whatwg.org/#feedback-from-the-protocol
    */
   #onConnectionEstablished (response, parsedExtensions) {
-    // processResponse is called when the "response’s header list has been received and initialized."
+    // processResponse is called when the "response's header list has been received and initialized."
     // once this happens, the connection is open
     this[kResponse] = response
 
-    const parser = new ByteParser(this, parsedExtensions)
+    const parser = new ByteParser(this, parsedExtensions, this.#options)
     parser.on('drain', onParserDrain)
     parser.on('error', onParserError.bind(this))
 
@@ -29713,6 +29819,19 @@ webidl.converters.WebSocketInit = webidl.dictionaryConverter([
   {
     key: 'headers',
     converter: webidl.nullableConverter(webidl.converters.HeadersInit)
+  },
+  {
+    key: 'maxDecompressedMessageSize',
+    converter: webidl.nullableConverter((V) => {
+      V = webidl.converters['unsigned long long'](V)
+      if (V <= 0) {
+        throw webidl.errors.exception({
+          header: 'WebSocket constructor',
+          message: 'maxDecompressedMessageSize must be greater than 0'
+        })
+      }
+      return V
+    })
   }
 ])
 
@@ -37686,7 +37805,7 @@ var init_argument_filters = __esm({
       return typeof input === "number";
     };
     filterString = (input) => {
-      return typeof input === "string";
+      return typeof input === "string" || isPathSpec(input);
     };
     filterStringOrStringArray = (input) => {
       return filterString(input) || Array.isArray(input) && input.every(filterString);
@@ -40358,6 +40477,49 @@ var init_version = __esm({
   }
 });
 
+// src/lib/tasks/clone.ts
+function createCloneTask(api, task, repoPath, ...args) {
+  if (!filterString(repoPath)) {
+    return configurationErrorTask(`git.${api}() requires a string 'repoPath'`);
+  }
+  return task(repoPath, filterType(args[0], filterString), getTrailingOptions(arguments));
+}
+function clone_default() {
+  return {
+    clone(repo, ...rest) {
+      return this._runTask(
+        createCloneTask("clone", cloneTask, filterType(repo, filterString), ...rest),
+        trailingFunctionArgument(arguments)
+      );
+    },
+    mirror(repo, ...rest) {
+      return this._runTask(
+        createCloneTask("mirror", cloneMirrorTask, filterType(repo, filterString), ...rest),
+        trailingFunctionArgument(arguments)
+      );
+    }
+  };
+}
+var cloneTask, cloneMirrorTask;
+var init_clone = __esm({
+  "src/lib/tasks/clone.ts"() {
+    "use strict";
+    init_task();
+    init_utils();
+    init_pathspec();
+    cloneTask = (repo, directory, customArgs) => {
+      const commands = ["clone", ...customArgs];
+      filterString(repo) && commands.push(pathspec(repo));
+      filterString(directory) && commands.push(pathspec(directory));
+      return straightThroughStringTask(commands);
+    };
+    cloneMirrorTask = (repo, directory, customArgs) => {
+      append(customArgs, "--mirror");
+      return cloneTask(repo, directory, customArgs);
+    };
+  }
+});
+
 // src/lib/simple-git-api.ts
 var simple_git_api_exports = {};
 __export(simple_git_api_exports, {
@@ -40385,6 +40547,7 @@ var init_simple_git_api = __esm({
     init_task();
     init_version();
     init_utils();
+    init_clone();
     SimpleGitApi = class {
       constructor(_executor) {
         this._executor = _executor;
@@ -40487,6 +40650,7 @@ var init_simple_git_api = __esm({
     Object.assign(
       SimpleGitApi.prototype,
       checkout_default(),
+      clone_default(),
       commit_default(),
       config_default(),
       count_objects_default(),
@@ -40826,37 +40990,6 @@ var init_check_ignore = __esm({
   }
 });
 
-// src/lib/tasks/clone.ts
-var clone_exports = {};
-__export(clone_exports, {
-  cloneMirrorTask: () => cloneMirrorTask,
-  cloneTask: () => cloneTask
-});
-function disallowedCommand(command) {
-  return /^--upload-pack(=|$)/.test(command);
-}
-function cloneTask(repo, directory, customArgs) {
-  const commands = ["clone", ...customArgs];
-  filterString(repo) && commands.push(repo);
-  filterString(directory) && commands.push(directory);
-  const banned = commands.find(disallowedCommand);
-  if (banned) {
-    return configurationErrorTask(`git.fetch: potential exploit argument blocked.`);
-  }
-  return straightThroughStringTask(commands);
-}
-function cloneMirrorTask(repo, directory, customArgs) {
-  append(customArgs, "--mirror");
-  return cloneTask(repo, directory, customArgs);
-}
-var init_clone = __esm({
-  "src/lib/tasks/clone.ts"() {
-    "use strict";
-    init_task();
-    init_utils();
-  }
-});
-
 // src/lib/parsers/parse-fetch.ts
 function parseFetchResult(stdOut, stdErr) {
   const result = {
@@ -40915,7 +41048,7 @@ var fetch_exports = {};
 __export(fetch_exports, {
   fetchTask: () => fetchTask
 });
-function disallowedCommand2(command) {
+function disallowedCommand(command) {
   return /^--upload-pack(=|$)/.test(command);
 }
 function fetchTask(remote, branch, customArgs) {
@@ -40923,7 +41056,7 @@ function fetchTask(remote, branch, customArgs) {
   if (remote && branch) {
     commands.push(remote, branch);
   }
-  const banned = commands.find(disallowedCommand2);
+  const banned = commands.find(disallowedCommand);
   if (banned) {
     return configurationErrorTask(`git.fetch: potential exploit argument blocked.`);
   }
@@ -41258,7 +41391,7 @@ var require_git = __commonJS({
     var { GitExecutor: GitExecutor2 } = (init_git_executor(), __toCommonJS(git_executor_exports));
     var { SimpleGitApi: SimpleGitApi2 } = (init_simple_git_api(), __toCommonJS(simple_git_api_exports));
     var { Scheduler: Scheduler2 } = (init_scheduler(), __toCommonJS(scheduler_exports));
-    var { configurationErrorTask: configurationErrorTask2 } = (init_task(), __toCommonJS(task_exports));
+    var { adhocExecTask: adhocExecTask2, configurationErrorTask: configurationErrorTask2 } = (init_task(), __toCommonJS(task_exports));
     var {
       asArray: asArray2,
       filterArray: filterArray2,
@@ -41279,7 +41412,6 @@ var require_git = __commonJS({
     } = (init_branch(), __toCommonJS(branch_exports));
     var { checkIgnoreTask: checkIgnoreTask2 } = (init_check_ignore(), __toCommonJS(check_ignore_exports));
     var { checkIsRepoTask: checkIsRepoTask2 } = (init_check_is_repo(), __toCommonJS(check_is_repo_exports));
-    var { cloneTask: cloneTask2, cloneMirrorTask: cloneMirrorTask2 } = (init_clone(), __toCommonJS(clone_exports));
     var { cleanWithOptionsTask: cleanWithOptionsTask2, isCleanOptionsArray: isCleanOptionsArray2 } = (init_clean(), __toCommonJS(clean_exports));
     var { diffSummaryTask: diffSummaryTask2 } = (init_diff(), __toCommonJS(diff_exports));
     var { fetchTask: fetchTask2 } = (init_fetch(), __toCommonJS(fetch_exports));
@@ -41334,24 +41466,6 @@ var require_git = __commonJS({
         trailingFunctionArgument2(arguments)
       );
     };
-    function createCloneTask(api, task, repoPath, localPath) {
-      if (typeof repoPath !== "string") {
-        return configurationErrorTask2(`git.${api}() requires a string 'repoPath'`);
-      }
-      return task(repoPath, filterType2(localPath, filterString2), getTrailingOptions2(arguments));
-    }
-    Git2.prototype.clone = function() {
-      return this._runTask(
-        createCloneTask("clone", cloneTask2, ...arguments),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.mirror = function() {
-      return this._runTask(
-        createCloneTask("mirror", cloneMirrorTask2, ...arguments),
-        trailingFunctionArgument2(arguments)
-      );
-    };
     Git2.prototype.mv = function(from, to) {
       return this._runTask(moveTask2(from, to), trailingFunctionArgument2(arguments));
     };
@@ -41384,10 +41498,13 @@ var require_git = __commonJS({
       );
     };
     Git2.prototype.silent = function(silence) {
-      console.warn(
-        "simple-git deprecation notice: git.silent: logging should be configured using the `debug` library / `DEBUG` environment variable, this will be an error in version 3"
+      return this._runTask(
+        adhocExecTask2(
+          () => console.warn(
+            "simple-git deprecation notice: git.silent: logging should be configured using the `debug` library / `DEBUG` environment variable, this method will be removed."
+          )
+        )
       );
-      return this;
     };
     Git2.prototype.tags = function(options, then) {
       return this._runTask(
@@ -41613,7 +41730,13 @@ var require_git = __commonJS({
       return this._runTask(task);
     };
     Git2.prototype.clearQueue = function() {
-      return this;
+      return this._runTask(
+        adhocExecTask2(
+          () => console.warn(
+            "simple-git deprecation notice: clearQueue() is deprecated and will be removed, switch to using the abortPlugin instead."
+          )
+        )
+      );
     };
     Git2.prototype.checkIgnore = function(pathnames, then) {
       return this._runTask(
@@ -41697,19 +41820,36 @@ function abortPlugin(signal) {
 function isConfigSwitch(arg) {
   return typeof arg === "string" && arg.trim().toLowerCase() === "-c";
 }
-function preventProtocolOverride(arg, next) {
-  if (!isConfigSwitch(arg)) {
-    return;
+function isCloneUploadPackSwitch(char, arg) {
+  if (typeof arg !== "string" || !arg.includes(char)) {
+    return false;
   }
-  if (!/^\s*protocol(.[a-z]+)?.allow/.test(next)) {
-    return;
-  }
-  throw new GitPluginError(
-    void 0,
-    "unsafe",
-    "Configuring protocol.allow is not permitted without enabling allowUnsafeExtProtocol"
-  );
+  const cleaned = arg.trim().replace(/\0/g, "");
+  return /^(--no)?-{1,2}[\dlsqvnobucj]+(\s|$)/.test(cleaned);
 }
+function preventConfigBuilder(config, setting, message = String(config)) {
+  const regex = typeof config === "string" ? new RegExp(`\\s*${config}`, "i") : config;
+  return function preventCommand(options, arg, next) {
+    if (options[setting] !== true && isConfigSwitch(arg) && regex.test(next)) {
+      throw new GitPluginError(
+        void 0,
+        "unsafe",
+        `Configuring ${message} is not permitted without enabling ${setting}`
+      );
+    }
+  };
+}
+var preventUnsafeConfig = [
+  preventConfigBuilder(
+    /^\s*protocol(.[a-z]+)?.allow/i,
+    "allowUnsafeProtocolOverride",
+    "protocol.allow"
+  ),
+  preventConfigBuilder("core.sshCommand", "allowUnsafeSshCommand"),
+  preventConfigBuilder("core.gitProxy", "allowUnsafeGitProxy"),
+  preventConfigBuilder("core.hooksPath", "allowUnsafeHooksPath"),
+  preventConfigBuilder("diff.external", "allowUnsafeDiffExternal")
+];
 function preventUploadPack(arg, method) {
   if (/^\s*--(upload|receive)-pack/.test(arg)) {
     throw new GitPluginError(
@@ -41718,7 +41858,7 @@ function preventUploadPack(arg, method) {
       `Use of --upload-pack or --receive-pack is not permitted without enabling allowUnsafePack`
     );
   }
-  if (method === "clone" && /^\s*-u\b/.test(arg)) {
+  if (method === "clone" && isCloneUploadPackSwitch("u", arg)) {
     throw new GitPluginError(
       void 0,
       "unsafe",
@@ -41734,16 +41874,16 @@ function preventUploadPack(arg, method) {
   }
 }
 function blockUnsafeOperationsPlugin({
-  allowUnsafeProtocolOverride = false,
-  allowUnsafePack = false
+  allowUnsafePack = false,
+  ...options
 } = {}) {
   return {
     type: "spawn.args",
     action(args, context) {
       args.forEach((current, index) => {
         const next = index < args.length ? args[index + 1] : "";
-        allowUnsafeProtocolOverride || preventProtocolOverride(current, next);
         allowUnsafePack || preventUploadPack(current, context.method);
+        preventUnsafeConfig.forEach((helper) => helper(options, current, next));
       });
       return args;
     }
@@ -42077,12 +42217,12 @@ function gitInstanceFactory(baseDir, options) {
     plugins.add(commandConfigPrefixingPlugin(config.config));
   }
   plugins.add(blockUnsafeOperationsPlugin(config.unsafe));
-  plugins.add(suffixPathsPlugin());
   plugins.add(completionDetectionPlugin(config.completion));
   config.abort && plugins.add(abortPlugin(config.abort));
   config.progress && plugins.add(progressMonitorPlugin(config.progress));
   config.timeout && plugins.add(timeoutPlugin(config.timeout));
   config.spawnOptions && plugins.add(spawnOptionsPlugin(config.spawnOptions));
+  plugins.add(suffixPathsPlugin());
   plugins.add(errorDetectionPlugin(errorDetectionHandler(true)));
   config.errors && plugins.add(errorDetectionPlugin(config.errors));
   customBinaryPlugin(plugins, config.binary, config.unsafe?.allowUnsafeCustomBinary);
