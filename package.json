@@ -7,7 +7,7 @@
         "@actions/core": "^3.0.0",
         "@actions/github": "^9.0.0",
         "@octokit/rest": "^22.0.1",
-        "simple-git": "^3.33.0"
+        "simple-git": "^3.36.0"
     },
     "description": "Updates a fork of a template repository by creating pull requests for changes",
     "devDependencies": {
