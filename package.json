@@ -5,9 +5,9 @@
     },
     "dependencies": {
         "@actions/core": "^3.0.0",
-        "@actions/github": "^9.0.0",
+        "@actions/github": "^9.1.0",
         "@octokit/rest": "^22.0.1",
-        "simple-git": "^3.33.0"
+        "simple-git": "^3.36.0"
     },
     "description": "Updates a fork of a template repository by creating pull requests for changes",
     "devDependencies": {
@@ -16,13 +16,13 @@
         "@semantic-release/exec": "^7.1.0",
         "@semantic-release/git": "^10.0.1",
         "@types/mocha": "^10.0.10",
-        "@types/node": "^25.2.3",
+        "@types/node": "^25.6.0",
         "@vercel/ncc": "^0.38.4",
         "c8": "^11.0.0",
-        "eslint": "^10.0.2",
+        "eslint": "^10.1.0",
         "eslint-config-prettier": "^10.1.8",
-        "eslint-plugin-jsonc": "^3.1.1",
-        "eslint-plugin-perfectionist": "^5.6.0",
+        "eslint-plugin-jsonc": "^3.1.2",
+        "eslint-plugin-perfectionist": "^5.8.0",
         "esm": "^3.2.25",
         "globals": "^17.4.0",
         "husky": "^9.1.7",
@@ -32,11 +32,11 @@
         "prettier": "^3.8.1",
         "semantic-release-license": "^1.0.3",
         "source-map-support": "^0.5.21",
-        "tsup": "^8.5.1",
+        "tsdown": "^0.21.9",
         "tsx": "^4.21.0",
-        "typedoc": "^0.28.17",
-        "typescript": "^5.9.3",
-        "typescript-eslint": "^8.56.0"
+        "typedoc": "^0.28.19",
+        "typescript": "^6.0.2",
+        "typescript-eslint": "^8.58.2"
     },
     "engines": {
         "node": "20 || >=22.0.0"
