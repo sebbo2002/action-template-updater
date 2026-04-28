@@ -4,7 +4,7 @@
         "url": "https://github.com/sebbo2002/action-template-updater/issues"
     },
     "dependencies": {
-        "@actions/core": "^3.0.0",
+        "@actions/core": "^3.0.1",
         "@actions/github": "^9.1.0",
         "@octokit/rest": "^22.0.1",
         "simple-git": "^3.36.0"
