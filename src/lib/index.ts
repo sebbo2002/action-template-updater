@@ -192,7 +192,7 @@ export default class Action {
             }
         } finally {
             this.core.info('Remove local repository');
-            await rm(tmp, { force: true, recursive: true });
+            await rm(tmp, { force: true, recursive: true, maxRetries: 5 });
             this.core.endGroup();
         }
     }
