@@ -1,3 +1,19 @@
+# [6.0.0](https://github.com/sebbo2002/action-template-updater/compare/v5.0.9...v6.0.0) (2026-06-02)
+
+### Bug Fixes
+
+- Add maxRetries to local repository removal ([4be9271](https://github.com/sebbo2002/action-template-updater/commit/4be92710cbba8fc0ba826a04c4a26c9acea26923))
+
+### Features
+
+- Drop support for node.js v20 and v23 ([d949a08](https://github.com/sebbo2002/action-template-updater/commit/d949a088c82ede8768c62556cfc0da9ce2255b1b))
+
+### BREAKING CHANGES
+
+- Drop node.js v20 / v23 Support
+
+This node.js version is no longer supported. For more information see https://nodejs.dev/en/about/releases/
+
 ## [5.0.9](https://github.com/sebbo2002/action-template-updater/compare/v5.0.8...v5.0.9) (2026-04-17)
 
 ## [5.0.8](https://github.com/sebbo2002/action-template-updater/compare/v5.0.7...v5.0.8) (2026-03-17)
