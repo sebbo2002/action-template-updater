@@ -42941,7 +42941,7 @@ class Action {
         }
         finally {
             this.core.info('Remove local repository');
-            await (0,promises_namespaceObject.rm)(tmp, { recursive: true });
+            await (0,promises_namespaceObject.rm)(tmp, { force: true, recursive: true, maxRetries: 5 });
             this.core.endGroup();
         }
     }
