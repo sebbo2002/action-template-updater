@@ -1,3 +1,5 @@
+## [6.0.1](https://github.com/sebbo2002/action-template-updater/compare/v6.0.0...v6.0.1) (2026-10-29)
+
 # [6.0.0](https://github.com/sebbo2002/action-template-updater/compare/v5.0.9...v6.0.0) (2026-06-02)
 
 ### Bug Fixes
