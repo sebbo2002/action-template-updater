@@ -7,10 +7,12 @@
         "module": "node16",
         "moduleResolution": "node16",
         "outDir": "./dist",
+        "rootDir": "./src",
         "skipLibCheck": true,
         "sourceMap": true,
         "strict": true,
         "target": "es2023",
+        "types": ["node"],
         "verbatimModuleSyntax": true
     },
     "exclude": ["**/*.spec.ts"],

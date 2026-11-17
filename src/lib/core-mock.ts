@@ -11,9 +11,7 @@ export type CoreInterface = {
 export type CoreMockBufferItem = CoreMockGroup | CoreMockMessage;
 export type CoreMockGroup = ['group', string, CoreMockMessage[]];
 export type CoreMockMessage =
-    | CoreMockMessageError
-    | CoreMockMessageOutput
-    | CoreMockMessageString;
+    CoreMockMessageError | CoreMockMessageOutput | CoreMockMessageString;
 export type CoreMockMessageError = ['error' | 'warning', Error | string];
 export type CoreMockMessageOutput = ['output', string, unknown];
 export type CoreMockMessageString = ['info' | 'notice', string];
