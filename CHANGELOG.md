@@ -1,3 +1,9 @@
+## [6.0.2](https://github.com/sebbo2002/action-template-updater/compare/v6.0.1...v6.0.2) (2026-11-18)
+
+### Bug Fixes
+
+- sync package-lock.json with package.json ([37bd956](https://github.com/sebbo2002/action-template-updater/commit/37bd956205c15269913294ef8db842bd8d6e67de))
+
 ## [6.0.1](https://github.com/sebbo2002/action-template-updater/compare/v6.0.0...v6.0.1) (2026-10-29)
 
 # [6.0.0](https://github.com/sebbo2002/action-template-updater/compare/v5.0.9...v6.0.0) (2026-06-02)
